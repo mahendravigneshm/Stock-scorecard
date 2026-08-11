@@ -110,10 +110,10 @@ function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both f
  fields:[{k:"start",label:n+", 5 yrs ago"},{k:"end",label:n+", latest"},{k:"yrs",label:"Yrs",def:"5",small:true}],
  compute:function(r){var s=+r.start,e=+r.end,y=+r.yrs||5;if(!s||!e||s<=0)return null;return(Math.pow(e/s,1/y)-1)*100;}};}
 var CALCS={
- roce:{bankOnly:true,ann:true,note:"ROA = Net profit ÷ Total assets. Tick 'quarterly' to annualise ×4.",
+ roce:{bankOnly:true,ann:true,note:"ROA = Net profit ÷ Total assets. Net profit = P&L \"Net Profit\" row · Total assets = Balance Sheet \"Total Assets\" row (bottom row, always visible). Tick 'quarterly' to annualise ×4.",
   fields:[{k:"np",label:"Net profit (₹)"},{k:"ta",label:"Total assets (₹)"}],
   compute:function(r,a){return r.np&&r.ta?(+r.np*(a?4:1))/+r.ta*100:null;}},
- margin:{bankOnly:true,ann:true,note:"NIM ≈ (Interest income − Finance cost) ÷ earning assets (Loans or Total assets).",
+ margin:{bankOnly:true,ann:true,note:"NIM = (Interest income − Finance cost) ÷ Loans or assets. Interest income = \"Revenue\" row · Finance cost = \"Interest\" row, right below it (Quarterly Results / P&L tab). Loans/assets = \"Total Assets\" row, or expand \"Other Assets\" for Advances (Balance Sheet tab). Note: Screener's own \"Financing Margin %\" isn't this — that's ÷ interest income, not ÷ assets, so don't type that number in here. Tick 'quarterly' to annualise ×4.",
   fields:[{k:"ii",label:"Interest income (₹)"},{k:"fc",label:"Finance cost (₹)"},{k:"ea",label:"Loans / total assets (₹)"}],
   compute:function(r,a){return r.ii&&r.fc&&r.ea?(+r.ii-+r.fc)*(a?4:1)/+r.ea*100:null;}},
  salesG:cagr("Sales"),profitG:cagr("Net profit"),epsG:cagr("EPS (₹)")
@@ -122,8 +122,8 @@ var CALCS={
 var QUALITY=[
  {id:"cashconv",label:"Cash conversion (OCF ÷ Net profit)",type:"num",unit:"x",good:0.8,warn:0.5,bankSkip:true,note:"How much profit turns into real cash (3-5yr avg). ≥0.8 healthy; low = earnings-quality risk / possible accounting flags.",src:"Screener → Cash Flow ('Cash from Operating Activity') ÷ P&L (Net profit)"},
  {id:"fcf",label:"Free cash flow positive",type:"tri",bankSkip:true,note:"OCF minus capex. Positive = self-funding growth; negative = capex-hungry or burning cash.",src:"Screener → Cash Flow tab → 'Free Cash Flow' row"},
- {id:"promTrend",label:"Promoter holding trend",type:"pick",opts:["Rising","Stable","Falling"],good:"Rising",warn:"Stable",note:"Promoters buying is a strong insider signal; a falling stake is a red flag the score misses.",src:"Screener → Shareholding → Promoters row, across quarters"},
- {id:"marginTrend",label:"Operating margin trend",type:"pick",opts:["Expanding","Stable","Contracting"],good:"Expanding",warn:"Stable",note:"Direction of profitability — expanding beats a high-but-shrinking margin.",src:"Screener → P&L → OPM % row: rising or falling?"},
+ {id:"promTrend",label:"Promoter holding trend",type:"pick",opts:["Rising","Stable","Falling"],good:"Rising",warn:"Stable",note:"Promoters buying is a strong insider signal; a falling stake is a red flag the score misses. Some companies (e.g. HDFC Bank, post its 2023 merger) genuinely have no promoter — shows as 0%, not missing data. Pick Stable in that case, not a red flag.",src:"Screener → Shareholding → Promoters row, across quarters"},
+ {id:"marginTrend",label:"Operating margin trend",bankLabel:"Net interest margin trend",type:"pick",opts:["Expanding","Stable","Contracting"],good:"Expanding",warn:"Stable",note:"Direction of profitability — expanding beats a high-but-shrinking margin.",src:"Screener → P&L → OPM % row: rising or falling?",bankSrc:"Quarterly results / investor presentation — is NIM rising or falling over recent quarters?"},
  {id:"roic",label:"ROIC vs cost of capital",type:"num",unit:"%",good:15,warn:12,bankSkip:true,note:"Return on invested capital — the purest value-creation test. Must beat cost of capital (~12% in India); below that, growth destroys value. ≥15% = true compounder.",src:"Tickertape Scorecard (ROIC), or Screener ROCE as a proxy"},
  {id:"peg",label:"PEG · P/E ÷ profit growth",type:"num",low:true,unit:"",good:1,warn:1.5,note:"Valuation relative to growth. <1 = cheap for its growth; >1.5 = paying up. Cross-checks the Valuation Comfort call.",src:"Tickertape (PEG ratio), or Screener: current P/E ÷ profit-growth %"}
 ];
@@ -291,7 +291,8 @@ function renderEditor(){
  h+='<div style="margin-top:14px"><input type="text" id="f_name" placeholder="Company name" value="'+esc(s.name)+'" oninput="setF(\'name\',this.value)"></div>';
  h+='<div class="row" style="margin-top:8px"><input type="text" id="f_ticker" placeholder="Ticker" value="'+esc(s.ticker)+'" oninput="setF(\'ticker\',this.value.toUpperCase())">'
   +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)">'
-  +'<input class="num" type="number" step="any" id="f_weight" placeholder="Wt %" value="'+(s.weight!=null?s.weight:"")+'" oninput="setF(\'weight\',this.value)" style="max-width:80px"></div>';
+  +'<input class="num" type="number" step="any" id="f_weight" placeholder="Value" value="'+(s.weight!=null?s.weight:"")+'" oninput="setF(\'weight\',this.value)" style="max-width:80px"></div>';
+ h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 0 2px">Value = current holding value (shares × today\'s price), not what you originally invested — the sector warning needs today\'s actual exposure. Same unit for every stock; leave blank to skip.</div>';
  h+='<label class="ann" style="margin:14px 0"><input type="checkbox" class="cbx" '+(s.isBank?"checked":"")+' onchange="setBank(this.checked)"> Bank / NBFC — swaps ROCE→ROA, D/E→CAR, EBITDA→NIM; skips interest coverage &amp; OCF</label>';
 
  CATS.forEach(function(cat){
@@ -322,15 +323,17 @@ function renderEditor(){
  QUALITY.forEach(function(q){
   var skip=s.isBank&&q.bankSkip,st=evalQ(q,s.metrics[q.id],s.isBank);
   var dc=st==="good"?"p":st==="concern"?"f":st==="warn"?"u":"u";
+  var qlabel=s.isBank&&q.bankLabel?q.bankLabel:q.label;
+  var qsrc=s.isBank&&q.bankSrc?q.bankSrc:q.src;
   h+='<div><div class="fr">';
   h+='<span class="dot '+(skip?"u":dc)+'" id="qdot_'+q.id+'" style="'+(st==="warn"?"background:var(--am)":"")+'"></span>';
-  h+='<span class="flabel">'+q.label+'</span>';
+  h+='<span class="flabel">'+qlabel+'</span>';
   if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
   else if(q.type==="num"){h+='<div class="vinput"><input class="num" type="number" step="any" value="'+(s.metrics[q.id]!=null?s.metrics[q.id]:"")+'" placeholder="—" oninput="setQNum(\''+q.id+'\',this.value)"><span class="u">'+q.unit+'</span></div>';}
   else if(q.type==="tri"){h+=triHTML(q.id,s.metrics[q.id]);}
   else{h+='<div class="wrapf" style="width:auto;justify-content:flex-end">';q.opts.forEach(function(o){h+='<button class="valbtn '+(s.metrics[q.id]===o?"on":"")+'" style="font-size:11px;padding:4px 7px" onclick="setQ(\''+q.id+'\',\''+o+'\')">'+o+'</button>';});h+='</div>';}
   h+='</div><div style="font-size:11px;color:var(--dim);margin:-2px 0 3px 19px">'+q.note+'</div>';
-  if(q.src&&!skip)h+='<div class="src" style="margin-bottom:10px">📍 '+q.src+'</div>';
+  if(qsrc&&!skip)h+='<div class="src" style="margin-bottom:10px">📍 '+qsrc+'</div>';
   h+='</div>';
  });
  h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
