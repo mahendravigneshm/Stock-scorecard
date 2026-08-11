@@ -145,21 +145,30 @@ function evalF(f,val,bank){
 function score(s){var r=FILTERS.map(function(f){return evalF(f,s.metrics[f.id],s.isBank);});
  return{r:r,p:r.filter(function(x){return x==="pass";}).length,u:r.filter(function(x){return x==="unknown";}).length};}
 function verd(p){return p>=10?{l:"Strong",c:"em"}:p>=7?{l:"Watch",c:"am"}:{l:"Exit",c:"rd"};}
-var VALS=["Very Cheap","Cheap","Fair","Expensive","Very Expensive"];
-function action(p,v){if(p<7)return"Exit in a planned way, over 2-3 sessions";
+var VALS=["Undervalued","Fairly Valued","Overvalued"];
+/* Maps the old 5-tier wording (still sitting in the seed data / anything already saved)
+   onto Tickertape's actual 3-tier labels, so nothing already picked gets silently lost. */
+function normalizeVal(v){
+ if(v==="Very Cheap"||v==="Cheap")return"Undervalued";
+ if(v==="Fair")return"Fairly Valued";
+ if(v==="Expensive"||v==="Very Expensive")return"Overvalued";
+ return v;
+}
+function action(p,v){v=normalizeVal(v);if(p<7)return"Exit in a planned way, over 2-3 sessions";
  if(p<10)return"Watch for 1 quarter — exit if it doesn't improve";
  if(!v)return"Strong — now run the valuation check";
- if(v==="Cheap"||v==="Very Cheap")return"Add more, systematically";
- if(v==="Fair")return"Hold, accumulate on dips";
+ if(v==="Undervalued")return"Add more, systematically";
+ if(v==="Fairly Valued")return"Hold, accumulate on dips";
  return"Hold — do not add. Wait for price to return to fair";}
 /* Explicit "can I buy this now" tag — same p/v thresholds as action(), just condensed
    to a short label + color so it reads at a glance across the whole dashboard. */
 function buyTag(p,v){
+ v=normalizeVal(v);
  if(p<7)return{l:"Not a buy",c:"rd"};
  if(p<10)return{l:"Not yet",c:"am"};
  if(!v)return{l:"Check valuation",c:"am"};
- if(v==="Cheap"||v==="Very Cheap")return{l:"Buy",c:"em"};
- if(v==="Fair")return{l:"Buy on dips",c:"am"};
+ if(v==="Undervalued")return{l:"Buy",c:"em"};
+ if(v==="Fairly Valued")return{l:"Buy on dips",c:"am"};
  return{l:"Wait — too pricey",c:"rd"};
 }
 
@@ -372,9 +381,10 @@ function setRaw(id,k,val){
 function valboxHTML(s){
  var x=score(s);
  if(x.p<10)return"";
- var h='<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation comfort check</div>'
-  +'<div class="sub" style="margin:0 0 8px">Read Tickertape\'s Valuation Comfort label:</div><div class="wrapf">';
- VALS.forEach(function(o){h+='<button class="valbtn '+(s.valuation===o?"on":"")+'" onclick="setVal(\''+o+'\')">'+o+'</button>';});
+ var norm=normalizeVal(s.valuation);
+ var h='<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation check</div>'
+  +'<div class="sub" style="margin:0 0 8px">Match whatever Tickertape shows for this stock\'s valuation:</div><div class="wrapf">';
+ VALS.forEach(function(o){h+='<button class="valbtn '+(norm===o?"on":"")+'" onclick="setVal(\''+o+'\')">'+o+'</button>';});
  h+='</div></div>';
  return h;
 }
