@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#020617">
+<title>Stock Scorecard</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="12-filter equity scorecard with Google Drive sync.">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{--bg:#020617;--card:#0f172a;--card2:#1e293b;--line:#334155;--txt:#f1f5f9;--mut:#94a3b8;--dim:#64748b;--cyan:#22d3ee;--em:#34d399;--am:#fbbf24;--rd:#f87171;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5}
+  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 60px}
+  h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+  .sub{color:var(--dim);font-size:13px;margin-top:6px}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .btn{background:var(--cyan);color:#052e33;font-weight:600;font-size:14px;padding:10px 16px;border-radius:8px}
+  .btn:active{opacity:.85}
+  .btn-o{border:1px solid var(--line);color:var(--mut);padding:9px 14px;border-radius:8px;font-size:14px}
+  .row{display:flex;align-items:center;gap:10px}
+  .between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .wrapf{display:flex;flex-wrap:wrap;gap:8px}
+  .summary{display:flex;gap:8px;margin:16px 0}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center}
+  .stat .n{font-size:22px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--mut);margin-top:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+  .name{font-weight:600}
+  .tkr{font-size:12px;color:var(--dim)}
+  .tag{font-size:10px;font-family:ui-monospace,monospace;padding:2px 6px;border-radius:5px}
+  .tag-bank{background:rgba(34,211,238,.15);color:var(--cyan)}
+  .tag-am{background:rgba(251,191,36,.15);color:var(--am)}
+  .tag-em{background:rgba(52,211,153,.15);color:var(--em)}
+  .tag-rd{background:rgba(248,113,113,.15);color:var(--rd)}
+  .meter{display:flex;gap:3px;margin-top:10px}
+  .pip{height:8px;width:100%;border-radius:2px;background:var(--card2)}
+  .pip.p{background:var(--em)}.pip.f{background:#334155}.pip.u{background:rgba(251,191,36,.35)}
+  .score{font-family:ui-monospace,monospace;font-size:26px;font-weight:700;line-height:1}
+  .score span{font-size:15px;color:var(--dim)}
+  .verd{font-size:12px;font-weight:600;margin-top:2px}
+  .em{color:var(--em)}.am{color:var(--am)}.rd{color:var(--rd)}
+  .action{margin-top:10px;padding:8px 10px;border-radius:7px;font-size:13px}
+  .a-em{background:rgba(52,211,153,.1);color:var(--em)}
+  .a-am{background:rgba(251,191,36,.1);color:var(--am)}
+  .a-rd{background:rgba(248,113,113,.1);color:var(--rd)}
+  .meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--dim)}
+  .trend{font-family:ui-monospace,monospace}
+  .lnk{font-size:12px}.lnk.c{color:var(--cyan)}.lnk.r{color:var(--rd)}
+  input[type=number],input[type=text]{background:var(--card2);border:1px solid var(--line);border-radius:6px;color:var(--txt);padding:8px 10px;font-size:14px;width:100%;font-family:inherit}
+  input.num{text-align:right;font-family:ui-monospace,monospace}
+  input:focus{outline:none;border-color:var(--cyan)}
+  .cat{font-size:11px;font-family:ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:16px 0 8px}
+  .fr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .dot{height:9px;width:9px;border-radius:50%;flex:none}
+  .dot.p{background:var(--em)}.dot.f{background:var(--rd)}.dot.u{background:#475569}
+  .flabel{flex:1;font-size:14px;min-width:0}
+  .flabel .th{color:var(--dim);font-family:ui-monospace,monospace;font-size:12px;margin-left:4px}
+  .flabel .vf{color:rgba(251,191,36,.7);font-size:11px;margin-left:4px}
+  .fbtn{font-family:ui-monospace,monospace;font-size:13px;border:1px solid var(--line);color:var(--cyan);border-radius:5px;padding:3px 7px}
+  .fbtn.on{background:var(--cyan);color:#052e33;border-color:var(--cyan)}
+  .vinput{display:flex;align-items:center;gap:5px;width:120px;flex:none}
+  .vinput .u{font-size:12px;color:var(--dim);width:14px}
+  .tri{display:flex;width:120px;flex:none;border:1px solid var(--line);border-radius:6px;overflow:hidden;font-size:12px}
+  .tri button{flex:1;padding:6px 0;background:var(--card2);color:var(--mut)}
+  .tri button.y{background:var(--em);color:#052e1a}.tri button.n{background:var(--rd);color:#3b0a0a}.tri button.q{background:#475569;color:#fff}
+  .calc{margin:6px 0 10px 19px;background:rgba(2,6,23,.6);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .calc .note{font-size:11px;color:var(--dim);margin:0 0 8px}
+  .calc .cf{flex:1;min-width:120px}
+  .calc label{font-size:10px;color:var(--dim);display:block;margin-bottom:3px}
+  .calc .small{width:64px;flex:none}
+  .ann{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut);margin-top:8px}
+  .valbox{border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.05);border-radius:8px;padding:10px;margin:14px 0}
+  .valbtn{font-size:12px;padding:5px 9px;border-radius:6px;border:1px solid var(--line);color:var(--txt)}
+  .valbtn.on{background:var(--em);color:#052e1a;border-color:var(--em)}
+  .live{border:1px solid var(--line);border-radius:8px;padding:12px;margin:14px 0;display:flex;justify-content:space-between;align-items:center}
+  .empty{border:1px dashed var(--line);border-radius:10px;padding:30px;text-align:center;color:var(--dim);font-size:14px}
+  .foot{margin-top:24px;font-size:11px;color:#475569;line-height:1.6}
+  .cbx{accent-color:var(--cyan)}
+  .src{font-size:11px;color:var(--cyan);opacity:.75;margin:-2px 0 10px 19px;line-height:1.4}
+  a{color:var(--cyan)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+/* ===== framework ===== */
+var CATS=["Profitability","Growth","Financial health","Ownership"];
+var FILTERS=[
+ {id:"roe",cat:"Profitability",label:"ROE",bankLabel:"ROE",unit:"%",op:"gt",t:15,bankT:15,src:"Screener → top ratios box (ROE %)"},
+ {id:"roce",cat:"Profitability",label:"ROCE",bankLabel:"ROA",unit:"%",op:"gt",t:15,bankT:1,bankUnit:"%",src:"Screener → top ratios box (ROCE %)",bankSrc:"P&L Net profit ÷ Balance-sheet Total assets, or the bank's investor presentation (ROA)"},
+ {id:"margin",cat:"Profitability",label:"5Y EBITDA margin",bankLabel:"Net interest margin",unit:"%",op:"gt",t:15,bankT:3,src:"Screener → P&L → OPM % row; average the last 5 years",bankSrc:"The bank's quarterly investor presentation (NIM), or (Interest income − Finance cost) ÷ assets"},
+ {id:"salesG",cat:"Growth",label:"Sales growth · 5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Sales Growth' box (5-yr)"},
+ {id:"profitG",cat:"Growth",label:"Profit growth · 3-5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Profit Growth' box (5-yr)"},
+ {id:"epsG",cat:"Growth",label:"EPS growth · 5Y",unit:"%",op:"gt",t:10,src:"Screener → P&L → 'EPS in Rs' row, two years apart (or use ƒ)"},
+ {id:"de",cat:"Financial health",label:"Debt to equity",bankLabel:"Capital adequacy ratio",unit:"",op:"lt",t:1,bankT:12,bankOp:"gt",bankUnit:"%",src:"Screener → top ratios box (Debt to equity)",bankSrc:"Screener ratios or the results Annexure (Capital Adequacy Ratio)"},
+ {id:"icr",cat:"Financial health",label:"Interest coverage",unit:"x",op:"gt",t:3,bankSkip:true,src:"Screener → ratios, or P&L: EBIT ÷ Interest"},
+ {id:"ocf",cat:"Financial health",label:"Positive OCF, 5 yrs",type:"bool",bankSkip:true,src:"Screener → Cash Flow tab → 'Cash from Operating Activity' (all 5 yrs positive?)"},
+ {id:"dii",cat:"Ownership",label:"DII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: DIIs, latest vs 6 months ago"},
+ {id:"fii",cat:"Ownership",label:"FII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: FIIs, latest vs 6 months ago"},
+ {id:"pledge",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"}
+];
+function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both figures from Screener's P&L.",
+ fields:[{k:"start",label:n+", 5 yrs ago"},{k:"end",label:n+", latest"},{k:"yrs",label:"Yrs",def:"5",small:true}],
+ compute:function(r){var s=+r.start,e=+r.end,y=+r.yrs||5;if(!s||!e||s<=0)return null;return(Math.pow(e/s,1/y)-1)*100;}};}
+var CALCS={
+ roce:{bankOnly:true,ann:true,note:"ROA = Net profit ÷ Total assets. Tick 'quarterly' to annualise ×4.",
+  fields:[{k:"np",label:"Net profit (₹)"},{k:"ta",label:"Total assets (₹)"}],
+  compute:function(r,a){return r.np&&r.ta?(+r.np*(a?4:1))/+r.ta*100:null;}},
+ margin:{bankOnly:true,ann:true,note:"NIM ≈ (Interest income − Finance cost) ÷ earning assets (Loans or Total assets).",
+  fields:[{k:"ii",label:"Interest income (₹)"},{k:"fc",label:"Finance cost (₹)"},{k:"ea",label:"Loans / total assets (₹)"}],
+  compute:function(r,a){return r.ii&&r.fc&&r.ea?(+r.ii-+r.fc)*(a?4:1)/+r.ea*100:null;}},
+ salesG:cagr("Sales"),profitG:cagr("Net profit"),epsG:cagr("EPS (₹)")
+};
+/* supplementary quality signals — NOT counted in the /12, shown as an overlay */
+var QUALITY=[
+ {id:"cashconv",label:"Cash conversion (OCF ÷ Net profit)",type:"num",unit:"x",good:0.8,warn:0.5,bankSkip:true,note:"How much profit turns into real cash (3-5yr avg). ≥0.8 healthy; low = earnings-quality risk / possible accounting flags.",src:"Screener → Cash Flow ('Cash from Operating Activity') ÷ P&L (Net profit)"},
+ {id:"fcf",label:"Free cash flow positive",type:"tri",bankSkip:true,note:"OCF minus capex. Positive = self-funding growth; negative = capex-hungry or burning cash.",src:"Screener → Cash Flow tab → 'Free Cash Flow' row"},
+ {id:"promTrend",label:"Promoter holding trend",type:"pick",opts:["Rising","Stable","Falling"],good:"Rising",warn:"Stable",note:"Promoters buying is a strong insider signal; a falling stake is a red flag the score misses.",src:"Screener → Shareholding → Promoters row, across quarters"},
+ {id:"marginTrend",label:"Operating margin trend",type:"pick",opts:["Expanding","Stable","Contracting"],good:"Expanding",warn:"Stable",note:"Direction of profitability — expanding beats a high-but-shrinking margin.",src:"Screener → P&L → OPM % row: rising or falling?"},
+ {id:"roic",label:"ROIC vs cost of capital",type:"num",unit:"%",good:15,warn:12,bankSkip:true,note:"Return on invested capital — the purest value-creation test. Must beat cost of capital (~12% in India); below that, growth destroys value. ≥15% = true compounder.",src:"Tickertape Scorecard (ROIC), or Screener ROCE as a proxy"},
+ {id:"peg",label:"PEG · P/E ÷ profit growth",type:"num",low:true,unit:"",good:1,warn:1.5,note:"Valuation relative to growth. <1 = cheap for its growth; >1.5 = paying up. Cross-checks the Valuation Comfort call.",src:"Tickertape (PEG ratio), or Screener: current P/E ÷ profit-growth %"}
+];
+function evalQ(q,val,bank){
+ if(bank&&q.bankSkip)return"na";
+ if(val===""||val==null)return"unknown";
+ if(q.type==="num"){var n=+val;if(isNaN(n))return"unknown";if(q.low)return n<=q.good?"good":n<=q.warn?"warn":"concern";return n>=q.good?"good":n>=q.warn?"warn":"concern";}
+ if(q.type==="tri")return val===true?"good":val===false?"concern":"unknown";
+ return val===q.good?"good":val===q.warn?"warn":"concern";
+}
+function qConcerns(s){return QUALITY.filter(function(q){return evalQ(q,s.metrics[q.id],s.isBank)==="concern";}).length;}
+function evalF(f,val,bank){
+ if(bank&&f.bankSkip)return"pass";
+ if(f.type==="bool"){return val===true?"pass":val===false?"fail":"unknown";}
+ if(val===""||val==null||isNaN(+val))return"unknown";
+ var n=+val,op=bank&&f.bankOp?f.bankOp:f.op,t=bank&&f.bankT!==undefined?f.bankT:f.t;
+ return(op==="gt"?n>t:n<t)?"pass":"fail";
+}
+function score(s){var r=FILTERS.map(function(f){return evalF(f,s.metrics[f.id],s.isBank);});
+ return{r:r,p:r.filter(function(x){return x==="pass";}).length,u:r.filter(function(x){return x==="unknown";}).length};}
+function verd(p){return p>=10?{l:"Strong",c:"em"}:p>=7?{l:"Watch",c:"am"}:{l:"Exit",c:"rd"};}
+var VALS=["Very Cheap","Cheap","Fair","Expensive","Very Expensive"];
+function action(p,v){if(p<7)return"Exit in a planned way, over 2-3 sessions";
+ if(p<10)return"Watch for 1 quarter — exit if it doesn't improve";
+ if(!v)return"Strong — now run the valuation check";
+ if(v==="Cheap"||v==="Very Cheap")return"Add more, systematically";
+ if(v==="Fair")return"Hold, accumulate on dips";
+ return"Hold — do not add. Wait for price to return to fair";}
+/* Explicit "can I buy this now" tag — same p/v thresholds as action(), just condensed
+   to a short label + color so it reads at a glance across the whole dashboard. */
+function buyTag(p,v){
+ if(p<7)return{l:"Not a buy",c:"rd"};
+ if(p<10)return{l:"Not yet",c:"am"};
+ if(!v)return{l:"Check valuation",c:"am"};
+ if(v==="Cheap"||v==="Very Cheap")return{l:"Buy",c:"em"};
+ if(v==="Fair")return{l:"Buy on dips",c:"am"};
+ return{l:"Wait — too pricey",c:"rd"};
+}
+
+/* ===== seeded holdings (starting estimates — verify on first review) ===== */
+function SEED(){
+ function m(o){return o;}
+ return [
+ {id:"h1",name:"TCS",ticker:"TCS",sector:"IT",isBank:false,valuation:"Cheap",lastUpdated:null,history:[],metrics:m({roe:51,roce:60,margin:26,salesG:10.2,profitG:8,epsG:8,de:0.05,icr:200,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h2",name:"Infosys",ticker:"INFY",sector:"IT",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:34,roce:40,margin:24,salesG:8,profitG:8,epsG:8,de:0.05,icr:200,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h3",name:"Wipro",ticker:"WIPRO",sector:"IT",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:15,roce:17,margin:17,salesG:2,profitG:3,epsG:3,de:0.1,icr:50,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h4",name:"ITC",ticker:"ITC",sector:"FMCG",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:35,roce:35,margin:35,salesG:9.9,profitG:8,epsG:8,de:0.02,icr:200,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h5",name:"ITC Hotels",ticker:"ITCHOTELS",sector:"Hotels",isBank:false,valuation:"Expensive",lastUpdated:null,history:[],metrics:m({roe:7,roce:9,margin:34,salesG:8,profitG:8,epsG:5,de:0.01,icr:50,ocf:false,dii:false,fii:false,pledge:0})},
+ {id:"h6",name:"Dr Reddy's",ticker:"DRREDDY",sector:"Pharma",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:11.5,roce:14.1,margin:25,salesG:8.7,profitG:5,epsG:5,de:0.1,icr:50,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h7",name:"Natco Pharma",ticker:"NATCOPHARM",sector:"Pharma",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:20,roce:22,margin:35,salesG:5,profitG:-10,epsG:-10,de:0.02,icr:100,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h8",name:"Zydus Life",ticker:"ZYDUSLIFE",sector:"Pharma",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:19,roce:20,margin:22,salesG:12,profitG:12,epsG:12,de:0.05,icr:100,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h9",name:"Cipla",ticker:"CIPLA",sector:"Pharma",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:15,roce:19,margin:24,salesG:10,profitG:12,epsG:12,de:0.02,icr:200,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h10",name:"Tata Steel",ticker:"TATASTEEL",sector:"Metals",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:10,roce:11,margin:13,salesG:5,profitG:-5,epsG:-5,de:1.2,icr:3,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h11",name:"L&T",ticker:"LT",sector:"Infra",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:15,roce:14,margin:12,salesG:18,profitG:18,epsG:15,de:1.3,icr:5,ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h12",name:"Tata Motors PV",ticker:"TMPV",sector:"Auto",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:17,roce:13,margin:13,salesG:11,profitG:10,epsG:"",de:0.71,icr:8,ocf:false,dii:null,fii:null,pledge:0})},
+ {id:"h13",name:"Tata Motors CV",ticker:"TMCV",sector:"Auto",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:m({roe:20,roce:18,margin:10,salesG:8,profitG:10,epsG:"",de:0.4,icr:10,ocf:false,dii:null,fii:null,pledge:0})},
+ {id:"h14",name:"HDFC Bank",ticker:"HDFCBANK",sector:"Bank",isBank:true,valuation:"Fair",lastUpdated:null,history:[],metrics:m({roe:17,roce:1.7,margin:3.4,salesG:14,profitG:11,epsG:12,de:19.7,icr:"",ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h15",name:"Karnataka Bank",ticker:"KTKBANK",sector:"Bank",isBank:true,valuation:"",lastUpdated:null,history:[],metrics:m({roe:12,roce:1.0,margin:3.2,salesG:10,profitG:8,epsG:8,de:15,icr:"",ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h16",name:"South Indian Bank",ticker:"SOUTHBANK",sector:"Bank",isBank:true,valuation:"",lastUpdated:null,history:[],metrics:m({roe:12,roce:0.9,margin:3.0,salesG:8,profitG:8,epsG:8,de:15,icr:"",ocf:true,dii:null,fii:null,pledge:0})},
+ {id:"h17",name:"IDFC First Bank",ticker:"IDFCFIRSTB",sector:"Bank",isBank:true,valuation:"",lastUpdated:null,history:[],metrics:m({roe:8,roce:0.6,margin:6.0,salesG:15,profitG:-20,epsG:-20,de:15.6,icr:"",ocf:true,dii:null,fii:null,pledge:0})}
+ ];
+}
+
+/* ===== state ===== */
+var KEY="stockScorecard:v1";
+var stocks=load(),draft=null,openCalc={};
+var driveState=Object.assign({token:null},loadDriveMeta());
+function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return SEED();}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));}catch(e){}}
+function daysSince(t){return t?Math.floor((Date.now()-t)/86400000):null;}
+function sectorAlloc(){
+ var byW={},byC={},tot=0,anyW=false,n=stocks.length||1;
+ stocks.forEach(function(s){var sec=(s.sector||"Unclassified");byC[sec]=(byC[sec]||0)+1;var w=+s.weight;if(w>0){anyW=true;byW[sec]=(byW[sec]||0)+w;tot+=w;}});
+ var rows=[],k;
+ if(anyW){for(k in byW)rows.push({sec:k,pct:byW[k]/tot*100,mode:"w"});}
+ else{for(k in byC)rows.push({sec:k,pct:byC[k]/n*100,cnt:byC[k],mode:"c"});}
+ rows.sort(function(a,b){return b.pct-a.pct;});
+ var over=rows.filter(function(r){return r.mode==="w"?r.pct>30:(r.cnt>=4||r.pct>=35);});
+ return {rows:rows,over:over,anyW:anyW};
+}
+function esc(s){return(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+
+/* ===== render ===== */
+function render(){draft?renderEditor():renderDash();}
+function meterHTML(r){return '<div class="meter">'+r.map(function(x){return '<span class="pip '+(x==="pass"?"p":x==="fail"?"f":"u")+'"></span>';}).join("")+'</div>';}
+
+function renderDash(){
+ var sc=stocks.map(function(s){return{s:s,x:score(s)};}).sort(function(a,b){return b.x.p-a.x.p;});
+ var strong=sc.filter(function(o){return o.x.p>=10;}).length;
+ var watch=sc.filter(function(o){return o.x.p>=7&&o.x.p<10;}).length;
+ var exit=sc.filter(function(o){return o.x.p<7;}).length;
+ var due=stocks.filter(function(s){var d=daysSince(s.lastUpdated);return d===null||d>90;}).length;
+ var h='';
+ h+='<div class="between"><div><h1>Scorecard</h1><div class="sub">'+stocks.length+' holdings · '+due+' to review</div></div>'
+   +'<button class="btn" onclick="addStock()">+ Add</button></div>';
+ h+='<div class="summary">'
+   +'<div class="stat"><div class="n em">'+strong+'</div><div class="l">Strong</div></div>'
+   +'<div class="stat"><div class="n am">'+watch+'</div><div class="l">Watch</div></div>'
+   +'<div class="stat"><div class="n rd">'+exit+'</div><div class="l">Exit</div></div></div>';
+ var sa=sectorAlloc();
+ if(sa.over.length){
+  h+='<div class="action a-rd" style="margin:0 0 12px">⚠ Sector over-allocation: '
+   +sa.over.map(function(r){return esc(r.sec)+' '+(r.mode==="w"?Math.round(r.pct)+'%':r.cnt+' stocks');}).join(', ')
+   +'. One theme going wrong drags the whole book — consider trimming or diversifying.</div>';
+ }
+ if(sa.rows.length&&!sa.anyW){
+  h+='<div style="font-size:11px;color:var(--dim);margin:-4px 0 12px">Allocation shown by stock count. Add <span class="mono">Wt %</span> to each holding for true value-based allocation.</div>';
+ }
+ if(!stocks.length){h+='<div class="empty">No stocks. Tap +Add to start.</div>';}
+ sc.forEach(function(o){h+=cardHTML(o.s,o.x);});
+ h+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice.</div>';
+ h+='<div class="live" style="margin-top:14px"><div><div style="font-size:13px;font-weight:600">Google Drive</div><div class="sub" id="driveStatus" style="margin-top:2px">'+driveStatusText()+'</div></div>'
+   +'<button class="btn-o" onclick="'+(driveState.token?"syncNow()":"connectDrive()")+'">'+(driveState.token?"Sync now":"Connect &amp; sync")+'</button></div>';
+ h+='<div class="row" style="margin-top:10px">'
+   +'<button class="btn-o" onclick="exportData()">Export backup</button>'
+   +'<button class="btn-o" onclick="document.getElementById(\'importFile\').click()">Import backup</button>'
+   +'<input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(this)"></div>';
+ document.getElementById("app").innerHTML=h;
+}
+
+function cardHTML(s,x){
+ var v=verd(x.p),act=action(x.p,s.valuation),bt=buyTag(x.p,s.valuation);
+ var d=daysSince(s.lastUpdated);
+ var when=d===null?'<span class="am">Not yet reviewed</span>':d>90?'<span class="am">Review due · '+d+'d</span>':('Updated '+(d===0?"today":d+"d ago"));
+ var tr='';var hist=s.history||[];
+ if(hist.length>=2){var dd=hist[hist.length-1].p-hist[hist.length-2].p;if(dd!==0)tr='<span class="trend '+(dd>0?"em":"rd")+'">'+(dd>0?"▲":"▼")+Math.abs(dd)+'</span>';}
+ return '<div class="card">'
+  +'<div class="between"><div>'
+   +'<div class="row" style="flex-wrap:wrap;gap:6px"><span class="name">'+esc(s.name||s.ticker)+'</span>'
+   +(s.ticker?'<span class="tkr mono">'+esc(s.ticker)+'</span>':'')
+   +'<span class="tag tag-'+bt.c+'">'+bt.l.toUpperCase()+'</span>'
+   +(s.isBank?'<span class="tag tag-bank">BANK/NBFC</span>':'')
+   +(s.sector?'<span class="tkr">· '+esc(s.sector)+'</span>':'')+'</div>'
+   +meterHTML(x.r)+'</div>'
+   +'<div style="text-align:right"><div class="score '+v.c+'">'+x.p+'<span>/12</span></div><div class="verd '+v.c+'">'+v.l+'</div></div>'
+  +'</div>'
+  +'<div class="action a-'+bt.c+'"><b>'+bt.l+'</b> — '+act+'</div>'
+  +(x.u>0?'<div style="margin-top:8px;font-size:12px;color:rgba(251,191,36,.7)">'+x.u+' filter'+(x.u>1?'s':'')+' unfilled — counts against score</div>':'')
+  +(qConcerns(s)>0?'<div style="margin-top:6px;font-size:12px;color:var(--rd)">⚠ '+qConcerns(s)+' quality flag'+(qConcerns(s)>1?'s':'')+' (cash / promoter / margin)</div>':'')
+  +'<div class="meta"><span>'+when+'</span>'+tr+'<span style="flex:1"></span>'
+   +'<button class="lnk c" onclick="editStock(\''+s.id+'\')">Update</button>'
+   +'<button class="lnk r" onclick="delStock(\''+s.id+'\')">Delete</button></div>'
+  +'</div>';
+}
+
+/* ===== editor ===== */
+function editStock(id){draft=JSON.parse(JSON.stringify(stocks.find(function(s){return s.id===id;})));openCalc={};render();}
+function addStock(){draft={id:"n"+Date.now(),name:"",ticker:"",sector:"",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:{}};openCalc={};render();}
+function cancelEdit(){draft=null;openCalc={};render();}
+function delStock(id){if(confirm("Delete this stock?")){stocks=stocks.filter(function(s){return s.id!==id;});persist();render();}}
+
+function renderEditor(){
+ var s=draft,x=score(s),v=verd(x.p);
+ var h='<div class="between"><h1>'+(s.name||s.ticker?esc(s.name||s.ticker):"New stock")+'</h1>'
+  +'<button class="lnk" style="color:var(--mut)" onclick="cancelEdit()">Cancel</button></div>';
+ h+='<div style="margin-top:14px"><input type="text" id="f_name" placeholder="Company name" value="'+esc(s.name)+'" oninput="setF(\'name\',this.value)"></div>';
+ h+='<div class="row" style="margin-top:8px"><input type="text" id="f_ticker" placeholder="Ticker" value="'+esc(s.ticker)+'" oninput="setF(\'ticker\',this.value.toUpperCase())">'
+  +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)">'
+  +'<input class="num" type="number" step="any" id="f_weight" placeholder="Wt %" value="'+(s.weight!=null?s.weight:"")+'" oninput="setF(\'weight\',this.value)" style="max-width:80px"></div>';
+ h+='<label class="ann" style="margin:14px 0"><input type="checkbox" class="cbx" '+(s.isBank?"checked":"")+' onchange="setBank(this.checked)"> Bank / NBFC — swaps ROCE→ROA, D/E→CAR, EBITDA→NIM; skips interest coverage &amp; OCF</label>';
+
+ CATS.forEach(function(cat){
+  h+='<div class="cat">'+cat+'</div>';
+  FILTERS.filter(function(f){return f.cat===cat;}).forEach(function(f){
+   var skip=s.isBank&&f.bankSkip;
+   var label=s.isBank&&f.bankLabel?f.bankLabel:f.label;
+   var unit=s.isBank&&f.bankUnit?f.bankUnit:f.unit;
+   var op=s.isBank&&f.bankOp?f.bankOp:f.op,t=s.isBank&&f.bankT!==undefined?f.bankT:f.t;
+   var res=evalF(f,s.metrics[f.id],s.isBank);
+   var calc=CALCS[f.id],calcShown=calc&&(!calc.bankOnly||s.isBank)&&!skip;
+   h+='<div><div class="fr">';
+   h+='<span class="dot '+(res==="pass"?"p":res==="fail"?"f":"u")+'" id="dot_'+f.id+'"></span>';
+   h+='<span class="flabel">'+label+(!skip&&f.type!=="bool"?'<span class="th">'+(op==="gt"?"＞":"＜")+' '+t+unit+'</span>':'')+(f.verify?'<span class="vf">· verify</span>':'')+'</span>';
+   if(calcShown)h+='<button class="fbtn '+(openCalc[f.id]?"on":"")+'" onclick="toggleCalc(\''+f.id+'\')">ƒ</button>';
+   if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
+   else if(f.type==="bool"){h+=triHTML(f.id,s.metrics[f.id]);}
+   else{h+='<div class="vinput"><input class="num" type="number" step="any" id="m_'+f.id+'" value="'+(s.metrics[f.id]!=null?s.metrics[f.id]:"")+'" placeholder="—" oninput="setM(\''+f.id+'\',this.value)"><span class="u">'+unit+'</span></div>';}
+   h+='</div>';
+   var src=s.isBank&&f.bankSrc?f.bankSrc:f.src;
+   if(src&&!skip)h+='<div class="src">📍 '+src+'</div>';
+   if(calcShown&&openCalc[f.id])h+=calcHTML(f.id,calc,s.metrics[f.id+"__raw"]||{});
+   h+='</div>';
+  });
+ });
+
+ h+='<div class="cat">Quality signals · not scored</div>';
+ QUALITY.forEach(function(q){
+  var skip=s.isBank&&q.bankSkip,st=evalQ(q,s.metrics[q.id],s.isBank);
+  var dc=st==="good"?"p":st==="concern"?"f":st==="warn"?"u":"u";
+  h+='<div><div class="fr">';
+  h+='<span class="dot '+(skip?"u":dc)+'" style="'+(st==="warn"?"background:var(--am)":"")+'"></span>';
+  h+='<span class="flabel">'+q.label+'</span>';
+  if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
+  else if(q.type==="num"){h+='<div class="vinput"><input class="num" type="number" step="any" value="'+(s.metrics[q.id]!=null?s.metrics[q.id]:"")+'" placeholder="—" oninput="setQ(\''+q.id+'\',this.value)"><span class="u">'+q.unit+'</span></div>';}
+  else if(q.type==="tri"){h+=triHTML(q.id,s.metrics[q.id]);}
+  else{h+='<div class="wrapf" style="width:auto;justify-content:flex-end">';q.opts.forEach(function(o){h+='<button class="valbtn '+(s.metrics[q.id]===o?"on":"")+'" style="font-size:11px;padding:4px 7px" onclick="setQ(\''+q.id+'\',\''+o+'\')">'+o+'</button>';});h+='</div>';}
+  h+='</div><div style="font-size:11px;color:var(--dim);margin:-2px 0 3px 19px">'+q.note+'</div>';
+  if(q.src&&!skip)h+='<div class="src" style="margin-bottom:10px">📍 '+q.src+'</div>';
+  h+='</div>';
+ });
+ if(x.p>=10){
+  h+='<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation comfort check</div>'
+   +'<div class="sub" style="margin:0 0 8px">Read Tickertape\'s Valuation Comfort label:</div><div class="wrapf">';
+  VALS.forEach(function(o){h+='<button class="valbtn '+(s.valuation===o?"on":"")+'" onclick="setVal(\''+o+'\')">'+o+'</button>';});
+  h+='</div></div>';
+ }
+ h+='<div class="live"><div><div id="liveMeter">'+meterHTML(x.r)+'</div><div class="'+buyTag(x.p,s.valuation).c+'" style="margin-top:8px;font-size:13px" id="liveAction"><b>'+buyTag(x.p,s.valuation).l+'</b> — '+action(x.p,s.valuation)+'</div></div>'
+  +'<div style="text-align:right"><div class="score '+v.c+'" id="liveScore">'+x.p+'<span>/12</span></div></div></div>';
+ h+='<button class="btn" style="width:100%" onclick="saveDraft()">Save &amp; timestamp</button>';
+ document.getElementById("app").innerHTML=h;
+}
+function triHTML(id,val){
+ return '<div class="tri" id="tri_'+id+'">'
+  +'<button class="'+(val===true?"y":"")+'" onclick="setBool(\''+id+'\',true)">Yes</button>'
+  +'<button class="'+(val===false?"n":"")+'" onclick="setBool(\''+id+'\',false)">No</button>'
+  +'<button class="'+(val===null||val===undefined?"q":"")+'" onclick="setBool(\''+id+'\',null)">?</button></div>';
+}
+function calcHTML(id,calc,raw){
+ var h='<div class="calc"><p class="note">'+calc.note+'</p><div class="wrapf">';
+ calc.fields.forEach(function(fld){
+  h+='<div class="cf'+(fld.small?" small":"")+'"><label>'+fld.label+'</label>'
+   +'<input class="num" type="number" step="any" value="'+(raw[fld.k]!=null?raw[fld.k]:(fld.def||""))+'" oninput="setRaw(\''+id+'\',\''+fld.k+'\',this.value)"></div>';
+ });
+ h+='</div>';
+ if(calc.ann)h+='<label class="ann"><input type="checkbox" class="cbx" '+(raw.ann?"checked":"")+' onchange="setRaw(\''+id+'\',\'ann\',this.checked)"> Figures are quarterly (annualise ×4)</label>';
+ h+='</div>';return h;
+}
+
+/* ===== editor events (targeted updates, no focus loss) ===== */
+function setF(k,val){draft[k]=val;}
+function setQ(id,val){draft.metrics[id]=val;renderEditor();}
+function setM(id,val){draft.metrics[id]=val;refreshLive();}
+function setBool(id,val){draft.metrics[id]=val;document.getElementById("tri_"+id).outerHTML=triHTML(id,val);refreshLive();}
+function setBank(c){draft.isBank=c;renderEditor();}
+function setVal(v){draft.valuation=v;renderEditor();}
+function toggleCalc(id){openCalc[id]=!openCalc[id];renderEditor();}
+function setRaw(id,k,val){
+ var raw=draft.metrics[id+"__raw"]||{};raw[k]=val;draft.metrics[id+"__raw"]=raw;
+ var calc=CALCS[id],res=calc.compute(raw,raw.ann);
+ if(res!=null&&!isNaN(res)){var rv=String(Math.round(res*100)/100);draft.metrics[id]=rv;var inp=document.getElementById("m_"+id);if(inp)inp.value=rv;}
+ refreshLive();
+}
+function refreshLive(){
+ var x=score(draft),v=verd(x.p),bt=buyTag(x.p,draft.valuation);
+ FILTERS.forEach(function(f){var d=document.getElementById("dot_"+f.id);if(d){var res=evalF(f,draft.metrics[f.id],draft.isBank);d.className="dot "+(res==="pass"?"p":res==="fail"?"f":"u");}});
+ var lm=document.getElementById("liveMeter");if(lm)lm.innerHTML=meterHTML(x.r);
+ var ls=document.getElementById("liveScore");if(ls){ls.innerHTML=x.p+'<span>/12</span>';ls.className="score "+v.c;}
+ var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,draft.valuation);la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
+ if((x.p>=10)!==(document.querySelector(".valbox")!=null))renderEditor();
+}
+function saveDraft(){
+ if(!draft.name&&!draft.ticker){alert("Add a name or ticker first.");return;}
+ var p=score(draft).p;
+ draft.lastUpdated=Date.now();
+ draft.history=(draft.history||[]).concat([{d:Date.now(),p:p}]);
+ var i=stocks.findIndex(function(s){return s.id===draft.id;});
+ if(i<0)stocks=stocks.concat([draft]);else{stocks=stocks.slice();stocks[i]=draft;}
+ persist();draft=null;openCalc={};render();
+}
+function exportData(){
+ var blob=new Blob([JSON.stringify(stocks,null,2)],{type:"application/json"});
+ var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+ a.download="scorecard-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();
+}
+function importData(el){
+ var file=el.files&&el.files[0];if(!file)return;
+ var reader=new FileReader();
+ reader.onload=function(){
+  try{
+   var data=JSON.parse(reader.result);
+   var list=Array.isArray(data)?data:data.stocks;
+   if(!Array.isArray(list))throw new Error("bad format");
+   if(!confirm("This replaces all "+stocks.length+" stocks currently on this device with the backup file. Continue?"))return;
+   stocks=list;persist();draft=null;render();
+   alert("Backup imported.");
+  }catch(e){alert("Could not read that file — make sure it's a Scorecard backup .json.");}
+ };
+ reader.readAsText(file);
+ el.value="";
+}
+
+/* =====================================================================
+   Google Drive sync
+   -----------------------------------------------------------------
+   Uses Google Identity Services (loaded in <head>) + the Drive REST API
+   with the `drive.file` scope — this app can only ever see/touch the
+   ONE file it creates for itself, never the rest of your Drive.
+
+   SETUP (one-time, done in Google Cloud Console — see chat for the
+   full walkthrough):
+     1. Create a Google Cloud project, enable the "Google Drive API".
+     2. Create an OAuth Client ID (type: Web application), and add
+        this app's deployed URL (your GitHub Pages URL) as an
+        authorized JavaScript origin.
+     3. Paste that client ID below, replacing YOUR_CLIENT_ID.
+   Nothing here works until step 3 is done — the app will tell you
+   that plainly instead of failing silently.
+   ===================================================================== */
+var DRIVE_CONFIG={
+ clientId:"YOUR_CLIENT_ID.apps.googleusercontent.com",
+ scope:"https://www.googleapis.com/auth/drive.file",
+ fileName:"stock-scorecard-data.json"
+};
+var DRIVE_META_KEY="stockScorecard:driveMeta";
+function loadDriveMeta(){try{var r=localStorage.getItem(DRIVE_META_KEY);if(r)return JSON.parse(r);}catch(e){}return{fileId:null,lastSynced:null};}
+function persistDriveMeta(){try{localStorage.setItem(DRIVE_META_KEY,JSON.stringify({fileId:driveState.fileId,lastSynced:driveState.lastSynced}));}catch(e){}}
+function driveReady(){return DRIVE_CONFIG.clientId.indexOf("YOUR_CLIENT_ID")!==0;}
+function driveStatusText(){
+ if(!driveReady())return"Not set up yet — see setup notes in the code / chat";
+ if(!driveState.token)return driveState.lastSynced?("Last synced "+fmtWhen(driveState.lastSynced)+" · tap to reconnect"):"Not connected yet";
+ return driveState.lastSynced?("Last synced "+fmtWhen(driveState.lastSynced)):"Connected";
+}
+function fmtWhen(t){var d=daysSince(t);if(d===0)return"today";if(d===1)return"1 day ago";return d+" days ago";}
+function setSyncStatus(t){var el=document.getElementById("driveStatus");if(el)el.textContent=t;}
+
+var tokenClient=null;
+function ensureTokenClient(){
+ if(tokenClient)return tokenClient;
+ if(!window.google||!google.accounts||!google.accounts.oauth2)return null;
+ tokenClient=google.accounts.oauth2.initTokenClient({client_id:DRIVE_CONFIG.clientId,scope:DRIVE_CONFIG.scope,callback:""});
+ return tokenClient;
+}
+function connectDrive(){
+ if(!driveReady()){alert("Google Drive isn't set up yet for this app — it needs a one-time Google Cloud OAuth client ID. See the setup notes near DRIVE_CONFIG in the code.");return;}
+ var tc=ensureTokenClient();
+ if(!tc){alert("Google Sign-In hasn't loaded yet — check your connection and try again in a moment.");return;}
+ tc.callback=function(resp){
+  if(resp.error){alert("Google sign-in failed: "+resp.error);return;}
+  driveState.token=resp.access_token;
+  syncNow();
+ };
+ tc.requestAccessToken({prompt:"consent"});
+}
+function driveFetch(url,opts){
+ opts=opts||{};
+ opts.headers=Object.assign({Authorization:"Bearer "+driveState.token},opts.headers||{});
+ return fetch(url,opts).then(function(res){
+  if(!res.ok)return res.text().then(function(t){throw new Error("Drive API error "+res.status+": "+t);});
+  return res;
+ });
+}
+function findDriveFile(){
+ var q=encodeURIComponent("name='"+DRIVE_CONFIG.fileName+"' and trashed=false");
+ return driveFetch("https://www.googleapis.com/drive/v3/files?q="+q+"&spaces=drive&fields=files(id,modifiedTime)")
+  .then(function(res){return res.json();})
+  .then(function(data){return(data.files&&data.files[0])||null;});
+}
+function pullFromDrive(){
+ return findDriveFile().then(function(file){
+  if(!file)return null;
+  driveState.fileId=file.id;
+  return driveFetch("https://www.googleapis.com/drive/v3/files/"+file.id+"?alt=media").then(function(res){return res.json();});
+ });
+}
+function pushToDrive(){
+ var body=JSON.stringify({stocks:stocks,exportedAt:new Date().toISOString()},null,2);
+ var metadata={name:DRIVE_CONFIG.fileName,mimeType:"application/json"};
+ var boundary="sc_boundary_"+Date.now();
+ var multipart="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(metadata)+"\r\n"
+  +"--"+boundary+"\r\nContent-Type: application/json\r\n\r\n"+body+"\r\n--"+boundary+"--";
+ var url=driveState.fileId
+  ?"https://www.googleapis.com/upload/drive/v3/files/"+driveState.fileId+"?uploadType=multipart"
+  :"https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+ var method=driveState.fileId?"PATCH":"POST";
+ return driveFetch(url,{method:method,headers:{"Content-Type":"multipart/related; boundary="+boundary},body:multipart})
+  .then(function(res){return res.json();})
+  .then(function(data){driveState.fileId=data.id;});
+}
+function syncNow(){
+ if(!driveState.token){connectDrive();return;}
+ setSyncStatus("Syncing…");
+ pullFromDrive().then(function(remote){
+  if(!remote||!Array.isArray(remote.stocks)||!remote.stocks.length){
+   return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");renderDash();});
+  }
+  var loadFromDrive=confirm(
+   "Drive already has saved data.\n\nOK = load Drive's copy onto this device (replaces what's here)\nCancel = push this device's copy to Drive instead (replaces what's there)"
+  );
+  if(loadFromDrive){
+   stocks=remote.stocks;persist();draft=null;
+   driveState.lastSynced=Date.now();persistDriveMeta();
+   renderDash();
+  }else{
+   return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();renderDash();});
+  }
+ }).catch(function(err){
+  console.error(err);
+  setSyncStatus("Sync failed — try again");
+  alert("Sync failed: "+err.message);
+ });
+}
+
+render();
+
+if("serviceWorker"in navigator){
+ window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(err){console.warn("Service worker registration failed",err);});});
+}
+</script>
+</body>
+</html>
