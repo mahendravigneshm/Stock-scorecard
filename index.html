@@ -314,22 +314,17 @@ function renderEditor(){
   var skip=s.isBank&&q.bankSkip,st=evalQ(q,s.metrics[q.id],s.isBank);
   var dc=st==="good"?"p":st==="concern"?"f":st==="warn"?"u":"u";
   h+='<div><div class="fr">';
-  h+='<span class="dot '+(skip?"u":dc)+'" style="'+(st==="warn"?"background:var(--am)":"")+'"></span>';
+  h+='<span class="dot '+(skip?"u":dc)+'" id="qdot_'+q.id+'" style="'+(st==="warn"?"background:var(--am)":"")+'"></span>';
   h+='<span class="flabel">'+q.label+'</span>';
   if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
-  else if(q.type==="num"){h+='<div class="vinput"><input class="num" type="number" step="any" value="'+(s.metrics[q.id]!=null?s.metrics[q.id]:"")+'" placeholder="—" oninput="setQ(\''+q.id+'\',this.value)"><span class="u">'+q.unit+'</span></div>';}
+  else if(q.type==="num"){h+='<div class="vinput"><input class="num" type="number" step="any" value="'+(s.metrics[q.id]!=null?s.metrics[q.id]:"")+'" placeholder="—" oninput="setQNum(\''+q.id+'\',this.value)"><span class="u">'+q.unit+'</span></div>';}
   else if(q.type==="tri"){h+=triHTML(q.id,s.metrics[q.id]);}
   else{h+='<div class="wrapf" style="width:auto;justify-content:flex-end">';q.opts.forEach(function(o){h+='<button class="valbtn '+(s.metrics[q.id]===o?"on":"")+'" style="font-size:11px;padding:4px 7px" onclick="setQ(\''+q.id+'\',\''+o+'\')">'+o+'</button>';});h+='</div>';}
   h+='</div><div style="font-size:11px;color:var(--dim);margin:-2px 0 3px 19px">'+q.note+'</div>';
   if(q.src&&!skip)h+='<div class="src" style="margin-bottom:10px">📍 '+q.src+'</div>';
   h+='</div>';
  });
- if(x.p>=10){
-  h+='<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation comfort check</div>'
-   +'<div class="sub" style="margin:0 0 8px">Read Tickertape\'s Valuation Comfort label:</div><div class="wrapf">';
-  VALS.forEach(function(o){h+='<button class="valbtn '+(s.valuation===o?"on":"")+'" onclick="setVal(\''+o+'\')">'+o+'</button>';});
-  h+='</div></div>';
- }
+ h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
  h+='<div class="live"><div><div id="liveMeter">'+meterHTML(x.r)+'</div><div class="'+buyTag(x.p,s.valuation).c+'" style="margin-top:8px;font-size:13px" id="liveAction"><b>'+buyTag(x.p,s.valuation).l+'</b> — '+action(x.p,s.valuation)+'</div></div>'
   +'<div style="text-align:right"><div class="score '+v.c+'" id="liveScore">'+x.p+'<span>/12</span></div></div></div>';
  h+='<button class="btn" style="width:100%" onclick="saveDraft()">Save &amp; timestamp</button>';
@@ -355,6 +350,14 @@ function calcHTML(id,calc,raw){
 /* ===== editor events (targeted updates, no focus loss) ===== */
 function setF(k,val){draft[k]=val;}
 function setQ(id,val){draft.metrics[id]=val;renderEditor();}
+function setQNum(id,val){
+ draft.metrics[id]=val;
+ var q=QUALITY.filter(function(x){return x.id===id;})[0];
+ var skip=draft.isBank&&q.bankSkip,st=evalQ(q,val,draft.isBank);
+ var dc=st==="good"?"p":st==="concern"?"f":"u";
+ var d=document.getElementById("qdot_"+id);
+ if(d){d.className="dot "+(skip?"u":dc);d.style.background=(!skip&&st==="warn")?"var(--am)":"";}
+}
 function setM(id,val){draft.metrics[id]=val;refreshLive();}
 function setBool(id,val){draft.metrics[id]=val;document.getElementById("tri_"+id).outerHTML=triHTML(id,val);refreshLive();}
 function setBank(c){draft.isBank=c;renderEditor();}
@@ -366,13 +369,22 @@ function setRaw(id,k,val){
  if(res!=null&&!isNaN(res)){var rv=String(Math.round(res*100)/100);draft.metrics[id]=rv;var inp=document.getElementById("m_"+id);if(inp)inp.value=rv;}
  refreshLive();
 }
+function valboxHTML(s){
+ var x=score(s);
+ if(x.p<10)return"";
+ var h='<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation comfort check</div>'
+  +'<div class="sub" style="margin:0 0 8px">Read Tickertape\'s Valuation Comfort label:</div><div class="wrapf">';
+ VALS.forEach(function(o){h+='<button class="valbtn '+(s.valuation===o?"on":"")+'" onclick="setVal(\''+o+'\')">'+o+'</button>';});
+ h+='</div></div>';
+ return h;
+}
 function refreshLive(){
  var x=score(draft),v=verd(x.p),bt=buyTag(x.p,draft.valuation);
  FILTERS.forEach(function(f){var d=document.getElementById("dot_"+f.id);if(d){var res=evalF(f,draft.metrics[f.id],draft.isBank);d.className="dot "+(res==="pass"?"p":res==="fail"?"f":"u");}});
  var lm=document.getElementById("liveMeter");if(lm)lm.innerHTML=meterHTML(x.r);
  var ls=document.getElementById("liveScore");if(ls){ls.innerHTML=x.p+'<span>/12</span>';ls.className="score "+v.c;}
  var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,draft.valuation);la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
- if((x.p>=10)!==(document.querySelector(".valbox")!=null))renderEditor();
+ var vw=document.getElementById("valboxWrap");if(vw)vw.innerHTML=valboxHTML(draft);
 }
 function saveDraft(){
  if(!draft.name&&!draft.ticker){alert("Add a name or ticker first.");return;}
@@ -423,7 +435,7 @@ function importData(el){
    that plainly instead of failing silently.
    ===================================================================== */
 var DRIVE_CONFIG={
- clientId:"258487739657-dlud7osnjg28ptl3rvhjf639elp7qlni.apps.googleusercontent.com",
+ clientId:"YOUR_CLIENT_ID.apps.googleusercontent.com",
  scope:"https://www.googleapis.com/auth/drive.file",
  fileName:"stock-scorecard-data.json"
 };
