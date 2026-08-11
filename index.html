@@ -113,8 +113,8 @@ var CALCS={
  roce:{bankOnly:true,ann:true,note:"ROA = Net profit ÷ Total assets. Net profit = P&L \"Net Profit\" row · Total assets = Balance Sheet \"Total Assets\" row (bottom row, always visible). Tick 'quarterly' to annualise ×4.",
   fields:[{k:"np",label:"Net profit (₹)"},{k:"ta",label:"Total assets (₹)"}],
   compute:function(r,a){return r.np&&r.ta?(+r.np*(a?4:1))/+r.ta*100:null;}},
- margin:{bankOnly:true,ann:true,note:"NIM = (Interest income − Finance cost) ÷ Loans or assets. Interest income = \"Revenue\" row · Finance cost = \"Interest\" row, right below it (Quarterly Results / P&L tab). Loans/assets = \"Total Assets\" row, or expand \"Other Assets\" for Advances (Balance Sheet tab). Note: Screener's own \"Financing Margin %\" isn't this — that's ÷ interest income, not ÷ assets, so don't type that number in here. Tick 'quarterly' to annualise ×4.",
-  fields:[{k:"ii",label:"Interest income (₹)"},{k:"fc",label:"Finance cost (₹)"},{k:"ea",label:"Loans / total assets (₹)"}],
+ margin:{bankOnly:true,ann:true,note:"NIM = (Interest income − Finance cost) ÷ assets. Interest income = \"Revenue\" row · Finance cost = \"Interest\" row, right below it (Quarterly Results / P&L tab). Assets = \"Total Assets\" row (Balance Sheet tab) — Screener's \"Loans n Advances\" sub-line under Other Assets is unreliable for banks (uses a generic template, doesn't capture the real loan book), so don't use that instead. Note: Screener's own \"Financing Margin %\" isn't this — that's ÷ interest income, not ÷ assets, so don't type that number in here. Tick 'quarterly' to annualise ×4.",
+  fields:[{k:"ii",label:"Interest income (₹)"},{k:"fc",label:"Finance cost (₹)"},{k:"ea",label:"Total assets (₹)"}],
   compute:function(r,a){return r.ii&&r.fc&&r.ea?(+r.ii-+r.fc)*(a?4:1)/+r.ea*100:null;}},
  salesG:cagr("Sales"),profitG:cagr("Net profit"),epsG:cagr("EPS (₹)")
 };
