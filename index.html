@@ -122,6 +122,12 @@
   .cmptable th.lbl{background:var(--card2);z-index:2}
   .cmptable tr.cat td{background:var(--bg);color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;text-align:left;position:sticky;left:0}
   .cmpv{font-family:ui-monospace,monospace;font-size:11.5px}
+
+  /* ===== sync decision modal ===== */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,.8);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;max-width:400px;width:100%}
+  .modal h3{margin:0 0 10px;font-size:17px}
+  .modal .sub{margin:0 0 16px;font-size:13.5px;color:var(--mut);line-height:1.5}
 </style>
 </head>
 <body>
@@ -243,7 +249,7 @@ function SEED(){
 /* ===== state ===== */
 var KEY="stockScorecard:v1";
 var stocks=load(),draft=null,openCalc={};
-var view="dash",compareSel=[];
+var view="dash",compareSel=[],syncPrompt=null;
 var driveState=Object.assign({token:null},loadDriveMeta());
 function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return SEED();}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));}catch(e){}}
@@ -261,7 +267,7 @@ function sectorAlloc(){
 function esc(s){return(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
 
 /* ===== render ===== */
-function render(){draft?renderEditor():(view==="compare"?renderCompare():renderDash());}
+function render(){draft?renderEditor():(view==="compare"?renderCompare():renderDash());if(syncPrompt)document.getElementById("app").insertAdjacentHTML("beforeend",syncPromptHTML());}
 function setView(v){view=v;render();}
 function tabbarHTML(){
  return '<div class="tabbar">'
@@ -307,6 +313,8 @@ function renderDash(){
    +'<button class="btn-o" onclick="exportData()">Export backup</button>'
    +'<button class="btn-o" onclick="document.getElementById(\'importFile\').click()">Import backup</button>'
    +'<input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(this)"></div>';
+ h+='<div class="row" style="margin-top:8px"><button class="btn-o" onclick="restoreLocalBackup()">Restore last local backup</button></div>';
+ h+='<div style="font-size:11px;color:var(--dim);margin-top:6px">Once connected, every "Save &amp; timestamp" also pushes to Drive automatically — no separate Sync tap needed for day-to-day updates. A local backup snapshot is still taken before every sync too, just in case; restoring it never touches Drive.</div>';
  document.getElementById("app").innerHTML=h;
 }
 
@@ -554,7 +562,23 @@ function saveDraft(){
  draft.history=(draft.history||[]).concat([{d:Date.now(),p:p}]);
  var i=stocks.findIndex(function(s){return s.id===draft.id;});
  if(i<0)stocks=stocks.concat([draft]);else{stocks=stocks.slice();stocks[i]=draft;}
- persist();draft=null;openCalc={};render();
+ persist();snapshotLocalBackup();draft=null;openCalc={};render();
+ autoSyncAfterSave();
+}
+/* Pushes straight to Drive after a save — no pull-and-compare here, unlike syncNow().
+   The device you just typed on is, by definition, the freshest copy right now, so there's
+   nothing to reconcile. Never blocks or alerts on failure — the local save already
+   succeeded regardless, this is just best-effort so Drive doesn't lag behind for long. */
+function autoSyncAfterSave(){
+ if(!driveState.token){setSyncStatus("Saved locally — not synced to Drive yet, tap Sync below");return;}
+ setSyncStatus("Saving to Drive…");
+ pushToDrive().then(function(){
+  driveState.lastSynced=Date.now();persistDriveMeta();
+  setSyncStatus(driveStatusText());
+ }).catch(function(err){
+  console.error(err);
+  setSyncStatus("Couldn't reach Drive just now — tap Sync to retry");
+ });
 }
 function exportData(){
  var blob=new Blob([JSON.stringify(stocks,null,2)],{type:"application/json"});
@@ -606,8 +630,8 @@ function persistDriveMeta(){try{localStorage.setItem(DRIVE_META_KEY,JSON.stringi
 function driveReady(){return DRIVE_CONFIG.clientId.indexOf("YOUR_CLIENT_ID")!==0;}
 function driveStatusText(){
  if(!driveReady())return"Not set up yet — see setup notes in the code / chat";
- if(!driveState.token)return driveState.lastSynced?("Last synced "+fmtWhen(driveState.lastSynced)+" · tap to reconnect"):"Not connected yet";
- return driveState.lastSynced?("Last synced "+fmtWhen(driveState.lastSynced)):"Connected";
+ if(!driveState.token)return driveState.lastSynced?("Last synced "+fmtWhen(driveState.lastSynced)+" · reconnect to resume auto-sync"):"Not connected — connect once, then every save auto-syncs";
+ return driveState.lastSynced?("Auto-syncing · last saved to Drive "+fmtWhen(driveState.lastSynced)):"Connected — will auto-sync after your next save";
 }
 function fmtWhen(t){var d=daysSince(t);if(d===0)return"today";if(d===1)return"1 day ago";return d+" days ago";}
 function setSyncStatus(t){var el=document.getElementById("driveStatus");if(el)el.textContent=t;}
@@ -665,28 +689,55 @@ function pushToDrive(){
   .then(function(res){return res.json();})
   .then(function(data){driveState.fileId=data.id;});
 }
+var LOCAL_BACKUP_KEY="stockScorecard:preSyncBackup";
+function snapshotLocalBackup(){try{localStorage.setItem(LOCAL_BACKUP_KEY,JSON.stringify({stocks:stocks,savedAt:Date.now()}));}catch(e){}}
+function loadLocalBackupMeta(){try{var r=localStorage.getItem(LOCAL_BACKUP_KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
+function restoreLocalBackup(){
+ var b=loadLocalBackupMeta();
+ if(!b){alert("No local backup snapshot found on this device yet — one gets saved automatically right before every sync.");return;}
+ if(!confirm("Restore the snapshot from "+fmtWhen(b.savedAt)+"? It has "+b.stocks.length+" stock(s). This replaces what's currently loaded on this device (Drive is untouched either way)."))return;
+ stocks=b.stocks;persist();draft=null;render();
+ alert("Restored "+b.stocks.length+" stock(s) from the "+fmtWhen(b.savedAt)+" snapshot.");
+}
 function syncNow(){
  if(!driveState.token){connectDrive();return;}
+ snapshotLocalBackup(); // always taken before touching anything, regardless of what happens next
  setSyncStatus("Syncing…");
  pullFromDrive().then(function(remote){
   if(!remote||!Array.isArray(remote.stocks)||!remote.stocks.length){
-   return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");renderDash();});
+   return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();});
   }
-  var loadFromDrive=confirm(
-   "Drive already has saved data.\n\nOK = load Drive's copy onto this device (replaces what's here)\nCancel = push this device's copy to Drive instead (replaces what's there)"
-  );
-  if(loadFromDrive){
-   stocks=remote.stocks;persist();draft=null;
-   driveState.lastSynced=Date.now();persistDriveMeta();
-   renderDash();
-  }else{
-   return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();renderDash();});
-  }
+  // Never decide this silently — always show real counts and require an explicit, clearly-labeled tap.
+  syncPrompt={remote:remote.stocks,remoteWhen:remote.exportedAt,localCount:stocks.length,remoteCount:remote.stocks.length};
+  render();
  }).catch(function(err){
   console.error(err);
   setSyncStatus("Sync failed — try again");
   alert("Sync failed: "+err.message);
  });
+}
+function syncPromptHTML(){
+ var p=syncPrompt;if(!p)return"";
+ return '<div class="modal-backdrop"><div class="modal">'
+  +'<h3>Drive already has saved data</h3>'
+  +'<p class="sub">This device currently has <b>'+p.localCount+'</b> stock(s). Drive has <b>'+p.remoteCount+'</b> stock(s)'
+  +(p.remoteWhen?', last saved '+esc(new Date(p.remoteWhen).toLocaleString()):'')+'. '
+  +'Whatever you pick, this device\'s current data is already backed up locally — <span class="lnk c" style="cursor:pointer" onclick="restoreLocalBackup()">restore it</span> any time from Settings if needed.</p>'
+  +'<button class="btn" style="width:100%;margin-bottom:8px" onclick="resolveSyncPrompt(\'keep\')">Keep this device\'s '+p.localCount+' — push to Drive</button>'
+  +'<button class="btn-o" style="width:100%;margin-bottom:8px" onclick="resolveSyncPrompt(\'load\')">Load Drive\'s '+p.remoteCount+' instead</button>'
+  +'<button class="lnk" style="display:block;width:100%;text-align:center;color:var(--dim)" onclick="resolveSyncPrompt(\'cancel\')">Cancel, decide later</button>'
+  +'</div></div>';
+}
+function resolveSyncPrompt(choice){
+ var p=syncPrompt;syncPrompt=null;
+ if(!p||choice==="cancel"){setSyncStatus("Sync cancelled");render();return;}
+ if(choice==="load"){
+  stocks=p.remote;persist();draft=null;
+  driveState.lastSynced=Date.now();persistDriveMeta();
+  render();
+ }else{
+  pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();render();}).catch(function(err){alert("Push failed: "+err.message);render();});
+ }
 }
 
 render();
