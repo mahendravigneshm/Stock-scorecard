@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="12-filter equity scorecard with Google Drive sync.">
+<meta name="description" content="Equity quality &amp; valuation scorecard with Google Drive sync.">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{--bg:#020617;--card:#0f172a;--card2:#1e293b;--line:#334155;--txt:#f1f5f9;--mut:#94a3b8;--dim:#64748b;--cyan:#22d3ee;--em:#34d399;--am:#fbbf24;--rd:#f87171;}
@@ -144,7 +144,7 @@
 <div class="wrap" id="app"></div>
 <script>
 /* ===== framework ===== */
-var CATS=["Profitability","Growth","Financial health","Ownership"];
+var CATS=["Profitability","Growth","Financial health","Ownership","Valuation"];
 var FILTERS=[
  {id:"roe",cat:"Profitability",label:"ROE",bankLabel:"ROE",unit:"%",op:"gt",t:15,bankT:15,src:"Screener → top ratios box (ROE %)"},
  {id:"roce",cat:"Profitability",label:"ROCE",bankLabel:"ROA",unit:"%",op:"gt",t:15,bankT:1,bankUnit:"%",src:"Screener → top ratios box (ROCE %)",bankSrc:"P&L Net profit ÷ Balance-sheet Total assets, or the bank's investor presentation (ROA)"},
@@ -157,7 +157,11 @@ var FILTERS=[
  {id:"ocf",cat:"Financial health",label:"Positive OCF, 5 yrs",type:"bool",bankSkip:true,src:"Screener → Cash Flow tab → 'Cash from Operating Activity' (all 5 yrs positive?)"},
  {id:"dii",cat:"Ownership",label:"DII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: DIIs, latest vs 6 months ago"},
  {id:"fii",cat:"Ownership",label:"FII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: FIIs, latest vs 6 months ago"},
- {id:"pledge",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"}
+ {id:"pledge",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"},
+ {id:"peVsHist",cat:"Valuation",label:"P/E vs its own 5Y median",unit:"%",op:"lt",t:0,src:"Screener → current P/E vs the stock's 5-yr median P/E. Enter the % difference: (current − median) ÷ median × 100. Negative = cheaper than its own history (passes). Tickertape shows this directly under 'PE Ratio' vs historical."},
+ {id:"peVsSector",cat:"Valuation",label:"P/E vs sector median",unit:"%",op:"lt",t:0,bankSkip:false,src:"Screener 'Industry PE' (top ratios box) vs the stock's P/E. Enter (stock PE − industry PE) ÷ industry PE × 100. Negative = cheaper than peers (passes)."},
+ {id:"pb",cat:"Valuation",label:"P/B (banks & financials)",unit:"",op:"lt",t:3,onlyBank:true,src:"Screener → top ratios box (Price to Book). For a quality bank, under ~3 is reasonable; pair it with high ROE. Non-banks can skip this."},
+ {id:"divYield",cat:"Valuation",label:"Dividend yield",unit:"%",op:"gt",t:1,src:"Screener → top ratios box (Dividend Yield %). Above ~1% for a large-cap indicates real cash returns; growth stocks may legitimately be lower."}
 ];
 function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both figures from Screener's P&L. True CAGR is mathematically undefined when going from a loss to a profit (or profit to loss) — no real percentage describes that. A turnaround like that shows as 999% (very strong) or −999% (very weak) instead, the same convention Screener itself uses for undefined ratios — not a literal precise number, just an unambiguous signal either way.",
  fields:[{k:"start",label:n+", 5 yrs ago"},{k:"end",label:n+", latest"},{k:"yrs",label:"Yrs",def:"5",small:true}],
@@ -224,15 +228,27 @@ function evalQ(q,val,bank){
 }
 function qConcerns(s){return QUALITY.filter(function(q){return evalQ(q,s.metrics[q.id],s.isBank)==="concern";}).length;}
 function evalF(f,val,bank){
- if(bank&&f.bankSkip)return"pass";
+ if(bank&&f.bankSkip)return"skip";
+ if(f.onlyBank&&!bank)return"skip";
  if(f.type==="bool"){return val===true?"pass":val===false?"fail":"unknown";}
  if(val===""||val==null||isNaN(+val))return"unknown";
  var n=+val,op=bank&&f.bankOp?f.bankOp:f.op,t=bank&&f.bankT!==undefined?f.bankT:f.t;
  return(op==="gt"?n>t:n<t)?"pass":"fail";
 }
+function scoreMax(bank){
+ // count filters that actually apply to this stock type
+ return FILTERS.filter(function(f){
+   if(bank&&f.bankSkip)return false;
+   if(f.onlyBank&&!bank)return false;
+   return true;
+ }).length;
+}
 function score(s){var r=FILTERS.map(function(f){return evalF(f,s.metrics[f.id],s.isBank);});
- return{r:r,p:r.filter(function(x){return x==="pass";}).length,u:r.filter(function(x){return x==="unknown";}).length};}
-function verd(p){return p>=10?{l:"Strong",c:"em"}:p>=7?{l:"Watch",c:"am"}:{l:"Exit",c:"rd"};}
+ var applicable=scoreMax(s.isBank);
+ return{r:r,p:r.filter(function(x){return x==="pass";}).length,
+   u:r.filter(function(x){return x==="unknown";}).length,max:applicable};}
+function verd(p,max){max=max||12;var strong=Math.round(max*0.80),watch=Math.round(max*0.58);
+ return p>=strong?{l:"Strong",c:"em"}:p>=watch?{l:"Watch",c:"am"}:{l:"Exit",c:"rd"};}
 var VALS=["Undervalued","Fairly Valued","Overvalued"];
 /* Maps the old 5-tier wording (still sitting in the seed data / anything already saved)
    onto Tickertape's actual 3-tier labels, so nothing already picked gets silently lost. */
@@ -313,7 +329,7 @@ function tabbarHTML(){
   +'<button class="tabbtn '+(view==="compare"?"on":"")+'" onclick="setView(\'compare\')">Compare</button>'
   +'</div>';
 }
-function meterHTML(r){return '<div class="meter">'+r.map(function(x){return '<span class="pip '+(x==="pass"?"p":x==="fail"?"f":"u")+'"></span>';}).join("")+'</div>';}
+function meterHTML(r){return '<div class="meter">'+r.filter(function(x){return x!=="skip";}).map(function(x){return '<span class="pip '+(x==="pass"?"p":x==="fail"?"f":"u")+'"></span>';}).join("")+'</div>';}
 
 function renderDash(){
  var sc=stocks.map(function(s){return{s:s,x:score(s)};}).sort(function(a,b){return b.x.p-a.x.p;});
@@ -376,7 +392,7 @@ function renderDash(){
 /* One compact row per stock: name/sector, score, short buy call, review status.
    Tap anywhere on the row to open the full filter breakdown (same as before). */
 function trowHTML(s,x){
- var v=verd(x.p),bt=buyTag(x.p,s.valuation);
+ var v=verd(x.p,x.max),bt=buyTag(x.p,s.valuation);
  var d=daysSince(s.lastUpdated);
  var rev=d===null?"New":d>90?"Due":d+"d";
  var revCls=(d===null||d>90)?"rd":"";
@@ -415,7 +431,7 @@ function renderCompare(){
   picker+='<div class="cksel" onclick="toggleCompare(\''+s.id+'\')">'
    +'<input type="checkbox" '+(checked?"checked":"")+' onclick="event.stopPropagation();toggleCompare(\''+s.id+'\')">'
    +'<span class="cn">'+esc(s.name||s.ticker)+(s.ticker?' <span class="mono" style="color:var(--dim);font-weight:400">'+esc(s.ticker)+'</span>':'')+'</span>'
-   +'<span class="cscore">'+x.p+'/12</span>'
+   +'<span class="cscore">'+x.p+'/'+x.max+'</span>'
    +'</div>';
  });
  picker+='</div>';
@@ -441,7 +457,7 @@ function compareTableHTML(sel){
  sel.forEach(function(s){h+='<th>'+esc(s.name||s.ticker)+(s.ticker?'<br><span style="font-weight:400;color:var(--dim)">'+esc(s.ticker)+'</span>':'')+'</th>';});
  h+='</tr></thead><tbody>';
 
- h+='<tr><td class="lbl">Score</td>'+sel.map(function(s){var x=score(s),v=verd(x.p);return'<td><span class="cmpv '+v.c+'" style="font-weight:700">'+x.p+'/12</span></td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Score</td>'+sel.map(function(s){var x=score(s),v=verd(x.p,x.max);return'<td><span class="cmpv '+v.c+'" style="font-weight:700">'+x.p+'/'+x.max+'</span></td>';}).join('')+'</tr>';
  h+='<tr><td class="lbl">Verdict</td>'+sel.map(function(s){var v=verd(score(s).p);return'<td><span class="'+v.c+'" style="font-weight:600">'+v.l+'</span></td>';}).join('')+'</tr>';
  h+='<tr><td class="lbl">Buy call</td>'+sel.map(function(s){var x=score(s),bt=buyTag(x.p,s.valuation);return'<td><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></td>';}).join('')+'</tr>';
 
@@ -475,6 +491,7 @@ function qualityRowLabel(q,sel){
 function cmpFilterCellHTML(f,s){
  var val=s.metrics[f.id],res=evalF(f,val,s.isBank);
  var cls=res==="pass"?"em":res==="fail"?"rd":"dim",txt;
+ if(res==="skip")cls="dim";
  if(res==="pass"&&f.bankSkip&&s.isBank)txt="N/A";
  else if(f.type==="bool")txt=val===true?"Yes":val===false?"No":"?";
  else if(val==null||val==="")txt="–";
@@ -496,7 +513,7 @@ function cancelEdit(){draft=null;openCalc={};render();}
 function delStock(id){if(confirm("Delete this stock?")){stocks=stocks.filter(function(s){return s.id!==id;});persist();if(draft&&draft.id===id)draft=null;compareSel=compareSel.filter(function(cid){return cid!==id;});render();}}
 
 function renderEditor(){
- var s=draft,x=score(s),v=verd(x.p);
+ var s=draft,x=score(s),v=verd(x.p,x.max);
  var isExisting=stocks.some(function(st){return st.id===s.id;});
  var h='<div class="between"><h1>'+(s.name||s.ticker?esc(s.name||s.ticker):"New stock")+'</h1>'
   +'<div class="row" style="gap:14px">'
@@ -513,7 +530,7 @@ function renderEditor(){
  CATS.forEach(function(cat){
   h+='<div class="cat">'+cat+'</div>';
   FILTERS.filter(function(f){return f.cat===cat;}).forEach(function(f){
-   var skip=s.isBank&&f.bankSkip;
+   var skip=(s.isBank&&f.bankSkip)||(f.onlyBank&&!s.isBank);
    var label=s.isBank&&f.bankLabel?f.bankLabel:f.label;
    var unit=s.isBank&&f.bankUnit?f.bankUnit:f.unit;
    var op=s.isBank&&f.bankOp?f.bankOp:f.op,t=s.isBank&&f.bankT!==undefined?f.bankT:f.t;
@@ -556,7 +573,7 @@ function renderEditor(){
  });
  h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
  h+='<div class="live"><div><div id="liveMeter">'+meterHTML(x.r)+'</div><div class="'+buyTag(x.p,s.valuation).c+'" style="margin-top:8px;font-size:13px" id="liveAction"><b>'+buyTag(x.p,s.valuation).l+'</b> — '+action(x.p,s.valuation)+'</div></div>'
-  +'<div style="text-align:right"><div class="score '+v.c+'" id="liveScore">'+x.p+'<span>/12</span></div></div></div>';
+  +'<div style="text-align:right"><div class="score '+v.c+'" id="liveScore">'+x.p+'<span>/'+x.max+'</span></div></div></div>';
  h+='<button class="btn" style="width:100%" onclick="saveDraft()">Save &amp; timestamp</button>';
  document.getElementById("app").innerHTML=h;
 }
@@ -610,7 +627,7 @@ function valboxHTML(s){
  return h;
 }
 function refreshLive(){
- var x=score(draft),v=verd(x.p),bt=buyTag(x.p,draft.valuation);
+ var x=score(draft),v=verd(x.p,x.max),bt=buyTag(x.p,draft.valuation);
  FILTERS.forEach(function(f){var d=document.getElementById("dot_"+f.id);if(d){var res=evalF(f,draft.metrics[f.id],draft.isBank);d.className="dot "+(res==="pass"?"p":res==="fail"?"f":"u");}});
  QUALITY.forEach(function(q){
   var d=document.getElementById("qdot_"+q.id);if(!d)return;
@@ -619,7 +636,7 @@ function refreshLive(){
   d.className="dot "+(skip?"u":dc);d.style.background=(!skip&&st==="warn")?"var(--am)":"";
  });
  var lm=document.getElementById("liveMeter");if(lm)lm.innerHTML=meterHTML(x.r);
- var ls=document.getElementById("liveScore");if(ls){ls.innerHTML=x.p+'<span>/12</span>';ls.className="score "+v.c;}
+ var ls=document.getElementById("liveScore");if(ls){ls.innerHTML=x.p+'<span>/'+x.max+'</span>';ls.className="score "+v.c;}
  var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,draft.valuation);la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
  var vw=document.getElementById("valboxWrap");if(vw)vw.innerHTML=valboxHTML(draft);
 }
