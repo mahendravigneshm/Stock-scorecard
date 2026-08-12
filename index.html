@@ -661,8 +661,20 @@ var DRIVE_CONFIG={
  fileName:"stock-scorecard-data.json"
 };
 var DRIVE_META_KEY="stockScorecard:driveMeta";
-function loadDriveMeta(){try{var r=localStorage.getItem(DRIVE_META_KEY);if(r)return JSON.parse(r);}catch(e){}return{fileId:null,lastSynced:null};}
-function persistDriveMeta(){try{localStorage.setItem(DRIVE_META_KEY,JSON.stringify({fileId:driveState.fileId,lastSynced:driveState.lastSynced}));}catch(e){}}
+function loadDriveMeta(){
+ try{
+  var r=localStorage.getItem(DRIVE_META_KEY);
+  if(r){
+   var d=JSON.parse(r);
+   // Only reuse a cached token if it genuinely hasn't expired yet (60s safety buffer)
+   // — tokens are short-lived (~1hr) and scoped only to this app's one Drive file.
+   if(!d.tokenExpiresAt||Date.now()>d.tokenExpiresAt-60000)d.token=null;
+   return d;
+  }
+ }catch(e){}
+ return{fileId:null,lastSynced:null,token:null,tokenExpiresAt:null};
+}
+function persistDriveMeta(){try{localStorage.setItem(DRIVE_META_KEY,JSON.stringify({fileId:driveState.fileId,lastSynced:driveState.lastSynced,token:driveState.token,tokenExpiresAt:driveState.tokenExpiresAt}));}catch(e){}}
 function driveReady(){return DRIVE_CONFIG.clientId.indexOf("YOUR_CLIENT_ID")!==0;}
 function driveStatusText(){
  if(!driveReady())return"Not set up yet — see setup notes in the code / chat";
@@ -686,14 +698,22 @@ function connectDrive(){
  tc.callback=function(resp){
   if(resp.error){alert("Google sign-in failed: "+resp.error);return;}
   driveState.token=resp.access_token;
+  driveState.tokenExpiresAt=Date.now()+((resp.expires_in||3599)*1000);
+  persistDriveMeta();
   syncNow();
  };
- tc.requestAccessToken({prompt:"consent"});
+ // Empty prompt = only ask again if actually needed (first time, or consent revoked) —
+ // once granted, reconnects after a token naturally expires are quick, not a full re-consent.
+ tc.requestAccessToken({prompt:""});
 }
 function driveFetch(url,opts){
  opts=opts||{};
  opts.headers=Object.assign({Authorization:"Bearer "+driveState.token},opts.headers||{});
  return fetch(url,opts).then(function(res){
+  if(res.status===401){
+   driveState.token=null;driveState.tokenExpiresAt=null;persistDriveMeta();
+   throw new Error("Your Drive connection expired — tap Connect & sync to reconnect.");
+  }
   if(!res.ok)return res.text().then(function(t){throw new Error("Drive API error "+res.status+": "+t);});
   return res;
  });
