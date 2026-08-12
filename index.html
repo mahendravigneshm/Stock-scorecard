@@ -16,7 +16,15 @@
   :root{--bg:#020617;--card:#0f172a;--card2:#1e293b;--line:#334155;--txt:#f1f5f9;--mut:#94a3b8;--dim:#64748b;--cyan:#22d3ee;--em:#34d399;--am:#fbbf24;--rd:#f87171;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5}
-  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 60px}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 22px 60px}
+  /* two-column dashboard on wide screens */
+  .dashgrid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+  @media(min-width:900px){.dashgrid{grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr)}}
+  .dashgrid .col-side{display:flex;flex-direction:column;gap:10px}
+  /* compare: sidebar list + metrics area */
+  .cmpgrid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+  @media(min-width:900px){.cmpgrid{grid-template-columns:270px minmax(0,1fr)}}
+  @media(min-width:900px){.cmpgrid .picker{position:sticky;top:16px;max-height:calc(100vh - 40px);overflow:auto}}
   h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0}
   .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
   .sub{color:var(--dim);font-size:13px;margin-top:6px}
@@ -114,8 +122,10 @@
   .cksel input{width:17px;height:17px;flex:none}
   .cksel .cn{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cksel .cscore{font-family:ui-monospace,monospace;font-size:12px;color:var(--dim);flex:none}
-  .cmpwrap{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
-  .cmptable{border-collapse:collapse}
+  .cmpwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+  .cmptable{border-collapse:collapse;width:100%;min-width:340px}
+  .cmptable td:not(.lbl),.cmptable th:not(.lbl){width:auto}
+  .cmptable td.lbl,.cmptable th.lbl{width:34%}
   .cmptable td,.cmptable th{padding:8px 12px;font-size:12.5px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:center}
   .cmptable th{background:var(--card2);font-size:11px;color:var(--mut);font-weight:600;position:sticky;top:0}
   .cmptable td.lbl,.cmptable th.lbl{position:sticky;left:0;background:var(--card);text-align:left;font-weight:600;z-index:1;max-width:150px;overflow:hidden;text-overflow:ellipsis}
@@ -315,33 +325,51 @@ function renderDash(){
  h+='<div class="between"><div><h1>Scorecard</h1><div class="sub">'+stocks.length+' holdings · '+due+' to review</div></div>'
    +'<button class="btn" onclick="addStock()">+ Add</button></div>';
  h+=tabbarHTML();
- h+='<div class="summary">'
+
+ var sa=sectorAlloc();
+ // ---- LEFT COLUMN: holdings table ----
+ var left='';
+ if(!stocks.length){
+  left+='<div class="empty">No stocks. Tap +Add to start.</div>';
+ }else{
+  left+='<div class="theadrow"><span style="flex:1">Stock</span><span class="tcol-score">Score</span><span class="tcol-tag">Call</span><span class="tcol-rev">Reviewed</span></div>';
+  sc.forEach(function(o){left+=trowHTML(o.s,o.x);});
+ }
+ left+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice. Tap any row for the full breakdown.</div>';
+
+ // ---- RIGHT COLUMN: summary, sector, drive, backup ----
+ var right='';
+ right+='<div class="summary" style="margin:0">'
    +'<div class="stat"><div class="n em">'+strong+'</div><div class="l">Strong</div></div>'
    +'<div class="stat"><div class="n am">'+watch+'</div><div class="l">Watch</div></div>'
    +'<div class="stat"><div class="n rd">'+exit+'</div><div class="l">Exit</div></div></div>';
- var sa=sectorAlloc();
  if(sa.over.length){
-  h+='<div class="action a-rd" style="margin:0 0 12px">⚠ Sector over-allocation: '
+  right+='<div class="action a-rd" style="margin:0">⚠ Sector over-allocation: '
    +sa.over.map(function(r){return esc(r.sec)+' '+(r.mode==="w"?Math.round(r.pct)+'%':r.cnt+' stocks');}).join(', ')
    +'. One theme going wrong drags the whole book — consider trimming or diversifying.</div>';
  }
- if(sa.rows.length&&!sa.anyW){
-  h+='<div style="font-size:11px;color:var(--dim);margin:-4px 0 12px">Allocation shown by stock count. Add a Value to each holding for true value-based allocation.</div>';
+ // sector allocation breakdown (uses the space the wide layout frees up)
+ if(sa.rows.length){
+  right+='<div class="card" style="margin:0"><div style="font-size:13px;font-weight:600;margin-bottom:8px">Sector allocation</div>';
+  var maxv=Math.max.apply(null,sa.rows.map(function(r){return r.mode==="w"?r.pct:r.cnt;}));
+  sa.rows.slice().sort(function(a,b){return(b.mode==="w"?b.pct:b.cnt)-(a.mode==="w"?a.pct:a.cnt);}).forEach(function(r){
+   var val=r.mode==="w"?r.pct:r.cnt,lbl=r.mode==="w"?Math.round(r.pct)+"%":r.cnt+(r.cnt===1?" stock":" stocks");
+   var w=maxv>0?Math.round(val/maxv*100):0;
+   right+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>'+esc(r.sec)+'</span><span style="color:var(--dim)">'+lbl+'</span></div>'
+     +'<div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:var(--cyan)"></div></div></div>';
+  });
+  if(!sa.anyW)right+='<div style="font-size:11px;color:var(--dim);margin-top:6px">By stock count. Add a Value to each holding for value-based allocation.</div>';
+  right+='</div>';
  }
- if(!stocks.length){
-  h+='<div class="empty">No stocks. Tap +Add to start.</div>';
- }else{
-  h+='<div class="theadrow"><span style="flex:1">Stock</span><span class="tcol-score">Score</span><span class="tcol-tag">Call</span><span class="tcol-rev">Reviewed</span></div>';
-  sc.forEach(function(o){h+=trowHTML(o.s,o.x);});
- }
- h+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice. Tap any row for the full breakdown.</div>';
- h+='<div class="live" style="margin-top:14px"><div><div style="font-size:13px;font-weight:600">Google Drive</div><div class="sub" id="driveStatus" style="margin-top:2px">'+driveStatusText()+'</div></div>'
+ right+='<div class="live" style="margin:0"><div><div style="font-size:13px;font-weight:600">Google Drive</div><div class="sub" id="driveStatus" style="margin-top:2px">'+driveStatusText()+'</div></div>'
    +'<button class="btn-o" onclick="'+(driveState.token?"syncNow()":"connectDrive()")+'">'+(driveState.token?"Sync now":"Connect &amp; sync")+'</button></div>';
- h+='<div class="row" style="margin-top:10px">'
+ right+='<div class="row">'
    +'<button class="btn-o" onclick="exportData()">Export backup</button>'
    +'<button class="btn-o" onclick="document.getElementById(\'importFile\').click()">Import backup</button>'
    +'<input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(this)"></div>';
- h+='<div style="font-size:11px;color:var(--dim);margin-top:6px">Once connected, every "Save &amp; timestamp" also pushes to Drive automatically — that\'s your source of truth across devices, no separate Sync tap needed day to day.</div>';
+ right+='<div style="font-size:11px;color:var(--dim)">Once connected, every "Save &amp; timestamp" also pushes to Drive automatically — your source of truth across devices.</div>';
+
+ h+='<div class="dashgrid"><div class="col-main">'+left+'</div><div class="col-side">'+right+'</div></div>';
  document.getElementById("app").innerHTML=h;
 }
 
@@ -380,23 +408,27 @@ function renderCompare(){
   document.getElementById("app").innerHTML=h;
   return;
  }
- h+='<div style="margin-top:10px">';
+ // LEFT: picker sidebar
+ var picker='<div class="card picker" style="margin:0"><div style="font-size:12px;font-weight:600;color:var(--mut);margin-bottom:8px">Select stocks ('+compareSel.length+')</div>';
  stocks.slice().sort(function(a,b){return(a.name||a.ticker||"").localeCompare(b.name||b.ticker||"");}).forEach(function(s){
   var x=score(s),checked=compareSel.indexOf(s.id)>-1;
-  h+='<div class="cksel" onclick="toggleCompare(\''+s.id+'\')">'
+  picker+='<div class="cksel" onclick="toggleCompare(\''+s.id+'\')">'
    +'<input type="checkbox" '+(checked?"checked":"")+' onclick="event.stopPropagation();toggleCompare(\''+s.id+'\')">'
    +'<span class="cn">'+esc(s.name||s.ticker)+(s.ticker?' <span class="mono" style="color:var(--dim);font-weight:400">'+esc(s.ticker)+'</span>':'')+'</span>'
    +'<span class="cscore">'+x.p+'/12</span>'
    +'</div>';
  });
- h+='</div>';
+ picker+='</div>';
 
+ // RIGHT: metrics
  var sel=compareSel.map(function(id){return stocks.find(function(s){return s.id===id;});}).filter(Boolean);
+ var right;
  if(sel.length<2){
-  h+='<div class="empty" style="margin-top:14px">Pick at least 2 stocks above to compare them.</div>';
+  right='<div class="empty" style="margin:0">Pick at least 2 stocks from the list to line them up side by side.</div>';
  }else{
-  h+=compareTableHTML(sel);
+  right=compareTableHTML(sel);
  }
+ h+='<div class="cmpgrid">'+picker+'<div class="col-cmp" style="min-width:0">'+right+'</div></div>';
  document.getElementById("app").innerHTML=h;
 }
 function toggleCompare(id){
@@ -796,7 +828,53 @@ function resolveSyncPrompt(choice){
  }
 }
 
+/* ── Auto-connect on load + re-sync on focus (mirrors the expense ledger) ── */
+function autoConnectDrive(){
+ if(!driveReady())return;                 // no client id configured yet
+ // Already have a live token from a previous session? Just sync quietly.
+ if(driveState.token){quietSync();return;}
+ // Otherwise try to obtain one silently — no popup unless Google decides consent is needed.
+ var tries=0;
+ (function attempt(){
+  var tc=ensureTokenClient();
+  if(!tc){ if(tries++<20){setTimeout(attempt,300);} return; } // GSI script still loading
+  tc.callback=function(resp){
+   if(resp&&resp.access_token){
+    driveState.token=resp.access_token;
+    driveState.tokenExpiresAt=Date.now()+((resp.expires_in||3599)*1000);
+    persistDriveMeta();
+    quietSync();
+   }
+   // if it errors silently, user can still tap Connect manually — no nag
+  };
+  try{ tc.requestAccessToken({prompt:""}); }catch(e){}
+ })();
+}
+/* Quiet pull: unlike syncNow(), only prompts on a real conflict, never on a clean load. */
+function quietSync(){
+ if(!driveState.token)return;
+ setSyncStatus("Syncing…");
+ pullFromDrive().then(function(remote){
+  var hasRemote=remote&&Array.isArray(remote.stocks)&&remote.stocks.length;
+  if(!hasRemote){                                   // Drive empty → push ours up
+   return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();});
+  }
+  var localEmpty=!stocks||!stocks.length;
+  if(localEmpty){                                   // nothing here yet → take Drive's copy
+   stocks=remote.stocks;persist();driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();return;
+  }
+  // both sides have data → defer to the explicit, safe chooser
+  syncPrompt={remote:remote.stocks,remoteWhen:remote.exportedAt,localCount:stocks.length,remoteCount:remote.stocks.length};
+  render();
+ }).catch(function(err){console.warn(err);setSyncStatus("Sync failed — tap to retry");});
+}
+document.addEventListener("visibilitychange",function(){
+ if(document.visibilityState==="visible"&&driveState.token)quietSync();
+});
+window.addEventListener("focus",function(){ if(driveState.token)quietSync(); });
+
 render();
+autoConnectDrive();
 
 if("serviceWorker"in navigator){
  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(err){console.warn("Service worker registration failed",err);});});
