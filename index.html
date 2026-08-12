@@ -85,6 +85,43 @@
   .cbx{accent-color:var(--cyan)}
   .src{font-size:11px;color:var(--cyan);opacity:.75;margin:-2px 0 10px 19px;line-height:1.4}
   a{color:var(--cyan)}
+
+  /* ===== tabs ===== */
+  .tabbar{display:flex;gap:4px;margin:16px 0 2px;border-bottom:1px solid var(--line)}
+  .tabbtn{background:none;border:none;color:var(--dim);font-size:14px;font-weight:600;font-family:inherit;padding:9px 6px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabbtn.on{color:var(--txt);border-bottom-color:var(--cyan)}
+
+  /* ===== compact stock table (dashboard) ===== */
+  .theadrow{display:flex;align-items:center;gap:8px;padding:10px 4px 7px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);border-bottom:1px solid var(--line)}
+  .trow{display:flex;align-items:center;gap:8px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  .trow:active{background:var(--card2)}
+  .trow .tn{flex:1;min-width:0}
+  .trow .tname{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trow .tsec{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .tcol-score{width:38px;text-align:right;flex:none}
+  .tcol-tag{width:46px;text-align:center;flex:none}
+  .tcol-rev{width:42px;text-align:right;flex:none}
+  .trow .tscore{font-family:ui-monospace,monospace;font-weight:700;font-size:13.5px}
+  .ttag{display:inline-block;font-size:9.5px;font-weight:700;padding:3px 5px;border-radius:5px;white-space:nowrap}
+  .ttag.em{background:rgba(52,211,153,.15);color:var(--em)}
+  .ttag.am{background:rgba(251,191,36,.15);color:var(--am)}
+  .ttag.rd{background:rgba(248,113,113,.15);color:var(--rd)}
+  .trev{font-size:10px;color:var(--dim)}
+  .trev.rd{color:var(--rd);font-weight:600}
+
+  /* ===== compare view ===== */
+  .cksel{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  .cksel input{width:17px;height:17px;flex:none}
+  .cksel .cn{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cksel .cscore{font-family:ui-monospace,monospace;font-size:12px;color:var(--dim);flex:none}
+  .cmpwrap{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+  .cmptable{border-collapse:collapse}
+  .cmptable td,.cmptable th{padding:8px 12px;font-size:12.5px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:center}
+  .cmptable th{background:var(--card2);font-size:11px;color:var(--mut);font-weight:600;position:sticky;top:0}
+  .cmptable td.lbl,.cmptable th.lbl{position:sticky;left:0;background:var(--card);text-align:left;font-weight:600;z-index:1;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+  .cmptable th.lbl{background:var(--card2);z-index:2}
+  .cmptable tr.cat td{background:var(--bg);color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;text-align:left;position:sticky;left:0}
+  .cmpv{font-family:ui-monospace,monospace;font-size:11.5px}
 </style>
 </head>
 <body>
@@ -106,9 +143,16 @@ var FILTERS=[
  {id:"fii",cat:"Ownership",label:"FII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: FIIs, latest vs 6 months ago"},
  {id:"pledge",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"}
 ];
-function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both figures from Screener's P&L.",
+function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both figures from Screener's P&L. True CAGR is mathematically undefined when going from a loss to a profit (or profit to loss) — no real percentage describes that. A turnaround like that shows as 999% (very strong) or −999% (very weak) instead, the same convention Screener itself uses for undefined ratios — not a literal precise number, just an unambiguous signal either way.",
  fields:[{k:"start",label:n+", 5 yrs ago"},{k:"end",label:n+", latest"},{k:"yrs",label:"Yrs",def:"5",small:true}],
- compute:function(r){var s=+r.start,e=+r.end,y=+r.yrs||5;if(!s||!e||s<=0)return null;return(Math.pow(e/s,1/y)-1)*100;}};}
+ compute:function(r){
+  var s=+r.start,e=+r.end,y=+r.yrs||5;
+  if(r.start===""||r.start==null||r.end===""||r.end==null||!y)return null;
+  if(s>0&&e>0)return(Math.pow(e/s,1/y)-1)*100;
+  if(s<=0&&e>0)return 999;  // loss -> profit: unambiguously strong, CAGR itself undefined
+  if(s>0&&e<=0)return-999;  // profit -> loss: unambiguously weak, CAGR itself undefined
+  return null;               // loss -> loss: too ambiguous to sentinel automatically, judge it yourself
+ }};}
 var CALCS={
  roce:{bankOnly:true,ann:true,note:"ROA = Net profit ÷ Total assets. Net profit = P&L \"Net Profit\" row · Total assets = Balance Sheet \"Total Assets\" row (bottom row, always visible). Tick 'quarterly' to annualise ×4.",
   fields:[{k:"np",label:"Net profit (₹)"},{k:"ta",label:"Total assets (₹)"}],
@@ -199,6 +243,7 @@ function SEED(){
 /* ===== state ===== */
 var KEY="stockScorecard:v1";
 var stocks=load(),draft=null,openCalc={};
+var view="dash",compareSel=[];
 var driveState=Object.assign({token:null},loadDriveMeta());
 function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return SEED();}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));}catch(e){}}
@@ -216,7 +261,14 @@ function sectorAlloc(){
 function esc(s){return(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
 
 /* ===== render ===== */
-function render(){draft?renderEditor():renderDash();}
+function render(){draft?renderEditor():(view==="compare"?renderCompare():renderDash());}
+function setView(v){view=v;render();}
+function tabbarHTML(){
+ return '<div class="tabbar">'
+  +'<button class="tabbtn '+(view==="dash"?"on":"")+'" onclick="setView(\'dash\')">Dashboard</button>'
+  +'<button class="tabbtn '+(view==="compare"?"on":"")+'" onclick="setView(\'compare\')">Compare</button>'
+  +'</div>';
+}
 function meterHTML(r){return '<div class="meter">'+r.map(function(x){return '<span class="pip '+(x==="pass"?"p":x==="fail"?"f":"u")+'"></span>';}).join("")+'</div>';}
 
 function renderDash(){
@@ -228,6 +280,7 @@ function renderDash(){
  var h='';
  h+='<div class="between"><div><h1>Scorecard</h1><div class="sub">'+stocks.length+' holdings · '+due+' to review</div></div>'
    +'<button class="btn" onclick="addStock()">+ Add</button></div>';
+ h+=tabbarHTML();
  h+='<div class="summary">'
    +'<div class="stat"><div class="n em">'+strong+'</div><div class="l">Strong</div></div>'
    +'<div class="stat"><div class="n am">'+watch+'</div><div class="l">Watch</div></div>'
@@ -239,11 +292,15 @@ function renderDash(){
    +'. One theme going wrong drags the whole book — consider trimming or diversifying.</div>';
  }
  if(sa.rows.length&&!sa.anyW){
-  h+='<div style="font-size:11px;color:var(--dim);margin:-4px 0 12px">Allocation shown by stock count. Add <span class="mono">Wt %</span> to each holding for true value-based allocation.</div>';
+  h+='<div style="font-size:11px;color:var(--dim);margin:-4px 0 12px">Allocation shown by stock count. Add a Value to each holding for true value-based allocation.</div>';
  }
- if(!stocks.length){h+='<div class="empty">No stocks. Tap +Add to start.</div>';}
- sc.forEach(function(o){h+=cardHTML(o.s,o.x);});
- h+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice.</div>';
+ if(!stocks.length){
+  h+='<div class="empty">No stocks. Tap +Add to start.</div>';
+ }else{
+  h+='<div class="theadrow"><span style="flex:1">Stock</span><span class="tcol-score">Score</span><span class="tcol-tag">Call</span><span class="tcol-rev">Reviewed</span></div>';
+  sc.forEach(function(o){h+=trowHTML(o.s,o.x);});
+ }
+ h+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice. Tap any row for the full breakdown.</div>';
  h+='<div class="live" style="margin-top:14px"><div><div style="font-size:13px;font-weight:600">Google Drive</div><div class="sub" id="driveStatus" style="margin-top:2px">'+driveStatusText()+'</div></div>'
    +'<button class="btn-o" onclick="'+(driveState.token?"syncNow()":"connectDrive()")+'">'+(driveState.token?"Sync now":"Connect &amp; sync")+'</button></div>';
  h+='<div class="row" style="margin-top:10px">'
@@ -253,41 +310,132 @@ function renderDash(){
  document.getElementById("app").innerHTML=h;
 }
 
-function cardHTML(s,x){
- var v=verd(x.p),act=action(x.p,s.valuation),bt=buyTag(x.p,s.valuation);
+/* One compact row per stock: name/sector, score, short buy call, review status.
+   Tap anywhere on the row to open the full filter breakdown (same as before). */
+function trowHTML(s,x){
+ var v=verd(x.p),bt=buyTag(x.p,s.valuation);
  var d=daysSince(s.lastUpdated);
- var when=d===null?'<span class="am">Not yet reviewed</span>':d>90?'<span class="am">Review due · '+d+'d</span>':('Updated '+(d===0?"today":d+"d ago"));
- var tr='';var hist=s.history||[];
- if(hist.length>=2){var dd=hist[hist.length-1].p-hist[hist.length-2].p;if(dd!==0)tr='<span class="trend '+(dd>0?"em":"rd")+'">'+(dd>0?"▲":"▼")+Math.abs(dd)+'</span>';}
- return '<div class="card">'
-  +'<div class="between"><div>'
-   +'<div class="row" style="flex-wrap:wrap;gap:6px"><span class="name">'+esc(s.name||s.ticker)+'</span>'
-   +(s.ticker?'<span class="tkr mono">'+esc(s.ticker)+'</span>':'')
-   +'<span class="tag tag-'+bt.c+'">'+bt.l.toUpperCase()+'</span>'
-   +(s.isBank?'<span class="tag tag-bank">BANK/NBFC</span>':'')
-   +(s.sector?'<span class="tkr">· '+esc(s.sector)+'</span>':'')+'</div>'
-   +meterHTML(x.r)+'</div>'
-   +'<div style="text-align:right"><div class="score '+v.c+'">'+x.p+'<span>/12</span></div><div class="verd '+v.c+'">'+v.l+'</div></div>'
-  +'</div>'
-  +'<div class="action a-'+bt.c+'"><b>'+bt.l+'</b> — '+act+'</div>'
-  +(x.u>0?'<div style="margin-top:8px;font-size:12px;color:rgba(251,191,36,.7)">'+x.u+' filter'+(x.u>1?'s':'')+' unfilled — counts against score</div>':'')
-  +(qConcerns(s)>0?'<div style="margin-top:6px;font-size:12px;color:var(--rd)">⚠ '+qConcerns(s)+' quality flag'+(qConcerns(s)>1?'s':'')+' (cash / promoter / margin)</div>':'')
-  +'<div class="meta"><span>'+when+'</span>'+tr+'<span style="flex:1"></span>'
-   +'<button class="lnk c" onclick="editStock(\''+s.id+'\')">Update</button>'
-   +'<button class="lnk r" onclick="delStock(\''+s.id+'\')">Delete</button></div>'
+ var rev=d===null?"New":d>90?"Due":d+"d";
+ var revCls=(d===null||d>90)?"rd":"";
+ var flags=qConcerns(s);
+ return '<div class="trow" onclick="editStock(\''+s.id+'\')">'
+  +'<div class="tn"><div class="tname">'+esc(s.name||s.ticker)+(flags>0?' <span style="color:var(--rd)">⚠</span>':'')+'</div>'
+  +'<div class="tsec">'+esc(s.sector||"")+(s.isBank?" · Bank":"")+'</div></div>'
+  +'<span class="tcol-score"><span class="tscore '+v.c+'">'+x.p+'</span></span>'
+  +'<span class="tcol-tag"><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></span>'
+  +'<span class="tcol-rev"><span class="trev '+revCls+'">'+rev+'</span></span>'
   +'</div>';
+}
+function buyTagShort(l){
+ if(l==="Buy")return"BUY";
+ if(l==="Buy on dips")return"DIPS";
+ if(l==="Not yet")return"WAIT";
+ if(l==="Not a buy")return"EXIT";
+ if(l==="Check valuation")return"CHK";
+ return"HOLD"; // "Wait — too pricey"
+}
+
+/* ===== compare ===== */
+function renderCompare(){
+ var h='<div class="between"><div><h1>Compare</h1><div class="sub">Pick 2 or more to line up side by side</div></div>'
+   +'<button class="btn" onclick="addStock()">+ Add</button></div>';
+ h+=tabbarHTML();
+ if(!stocks.length){
+  h+='<div class="empty" style="margin-top:14px">No stocks yet — add some on the Dashboard tab first.</div>';
+  document.getElementById("app").innerHTML=h;
+  return;
+ }
+ h+='<div style="margin-top:10px">';
+ stocks.slice().sort(function(a,b){return(a.name||a.ticker||"").localeCompare(b.name||b.ticker||"");}).forEach(function(s){
+  var x=score(s),checked=compareSel.indexOf(s.id)>-1;
+  h+='<div class="cksel" onclick="toggleCompare(\''+s.id+'\')">'
+   +'<input type="checkbox" '+(checked?"checked":"")+' onclick="event.stopPropagation();toggleCompare(\''+s.id+'\')">'
+   +'<span class="cn">'+esc(s.name||s.ticker)+(s.ticker?' <span class="mono" style="color:var(--dim);font-weight:400">'+esc(s.ticker)+'</span>':'')+'</span>'
+   +'<span class="cscore">'+x.p+'/12</span>'
+   +'</div>';
+ });
+ h+='</div>';
+
+ var sel=compareSel.map(function(id){return stocks.find(function(s){return s.id===id;});}).filter(Boolean);
+ if(sel.length<2){
+  h+='<div class="empty" style="margin-top:14px">Pick at least 2 stocks above to compare them.</div>';
+ }else{
+  h+=compareTableHTML(sel);
+ }
+ document.getElementById("app").innerHTML=h;
+}
+function toggleCompare(id){
+ var i=compareSel.indexOf(id);
+ if(i>-1)compareSel.splice(i,1);else compareSel.push(id);
+ renderCompare();
+}
+function compareTableHTML(sel){
+ var h='<div class="cmpwrap"><table class="cmptable"><thead><tr><th class="lbl"></th>';
+ sel.forEach(function(s){h+='<th>'+esc(s.name||s.ticker)+(s.ticker?'<br><span style="font-weight:400;color:var(--dim)">'+esc(s.ticker)+'</span>':'')+'</th>';});
+ h+='</tr></thead><tbody>';
+
+ h+='<tr><td class="lbl">Score</td>'+sel.map(function(s){var x=score(s),v=verd(x.p);return'<td><span class="cmpv '+v.c+'" style="font-weight:700">'+x.p+'/12</span></td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Verdict</td>'+sel.map(function(s){var v=verd(score(s).p);return'<td><span class="'+v.c+'" style="font-weight:600">'+v.l+'</span></td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Buy call</td>'+sel.map(function(s){var x=score(s),bt=buyTag(x.p,s.valuation);return'<td><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></td>';}).join('')+'</tr>';
+
+ var lastCat=null;
+ FILTERS.forEach(function(f){
+  if(f.cat!==lastCat){h+='<tr class="cat"><td colspan="'+(sel.length+1)+'">'+esc(f.cat)+'</td></tr>';lastCat=f.cat;}
+  h+='<tr><td class="lbl">'+filterRowLabel(f,sel)+'</td>'+sel.map(function(s){return cmpFilterCellHTML(f,s);}).join('')+'</tr>';
+ });
+
+ h+='<tr class="cat"><td colspan="'+(sel.length+1)+'">Quality signals</td></tr>';
+ QUALITY.forEach(function(q){
+  h+='<tr><td class="lbl">'+qualityRowLabel(q,sel)+'</td>'+sel.map(function(s){return cmpQualityCellHTML(q,s);}).join('')+'</tr>';
+ });
+
+ h+='</tbody></table></div>';
+ h+='<div style="font-size:11px;color:var(--dim);margin-top:8px">Rows swap to each stock\'s bank-mode metric automatically where applicable (e.g. ROCE/ROA).</div>';
+ return h;
+}
+function filterRowLabel(f,sel){
+ var anyBank=sel.some(function(s){return s.isBank;}),anyNon=sel.some(function(s){return!s.isBank;});
+ if(!f.bankLabel)return esc(f.label);
+ if(anyBank&&anyNon)return esc(f.label)+' / '+esc(f.bankLabel);
+ return anyBank?esc(f.bankLabel):esc(f.label);
+}
+function qualityRowLabel(q,sel){
+ var anyBank=sel.some(function(s){return s.isBank&&!q.bankSkip;}),anyNon=sel.some(function(s){return!s.isBank;});
+ if(!q.bankLabel)return esc(q.label);
+ if(anyBank&&anyNon)return esc(q.label)+' / '+esc(q.bankLabel);
+ return anyBank?esc(q.bankLabel):esc(q.label);
+}
+function cmpFilterCellHTML(f,s){
+ var val=s.metrics[f.id],res=evalF(f,val,s.isBank);
+ var cls=res==="pass"?"em":res==="fail"?"rd":"dim",txt;
+ if(res==="pass"&&f.bankSkip&&s.isBank)txt="N/A";
+ else if(f.type==="bool")txt=val===true?"Yes":val===false?"No":"?";
+ else if(val==null||val==="")txt="–";
+ else txt=val+((s.isBank&&f.bankUnit!=null)?f.bankUnit:(f.unit||""));
+ return'<td><span class="cmpv '+cls+'">'+esc(String(txt))+'</span></td>';
+}
+function cmpQualityCellHTML(q,s){
+ var st=evalQ(q,s.metrics[q.id],s.isBank);
+ if(st==="na")return'<td><span class="dim">N/A</span></td>';
+ var cls=st==="good"?"em":st==="concern"?"rd":st==="warn"?"am":"dim";
+ var lbl=st==="good"?"OK":st==="concern"?"Flag":st==="warn"?"Warn":"–";
+ return'<td><span class="cmpv '+cls+'">'+lbl+'</span></td>';
 }
 
 /* ===== editor ===== */
 function editStock(id){draft=JSON.parse(JSON.stringify(stocks.find(function(s){return s.id===id;})));openCalc={};render();}
 function addStock(){draft={id:"n"+Date.now(),name:"",ticker:"",sector:"",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:{}};openCalc={};render();}
 function cancelEdit(){draft=null;openCalc={};render();}
-function delStock(id){if(confirm("Delete this stock?")){stocks=stocks.filter(function(s){return s.id!==id;});persist();render();}}
+function delStock(id){if(confirm("Delete this stock?")){stocks=stocks.filter(function(s){return s.id!==id;});persist();if(draft&&draft.id===id)draft=null;compareSel=compareSel.filter(function(cid){return cid!==id;});render();}}
 
 function renderEditor(){
  var s=draft,x=score(s),v=verd(x.p);
+ var isExisting=stocks.some(function(st){return st.id===s.id;});
  var h='<div class="between"><h1>'+(s.name||s.ticker?esc(s.name||s.ticker):"New stock")+'</h1>'
-  +'<button class="lnk" style="color:var(--mut)" onclick="cancelEdit()">Cancel</button></div>';
+  +'<div class="row" style="gap:14px">'
+  +(isExisting?'<button class="lnk r" onclick="delStock(\''+s.id+'\')">Delete</button>':'')
+  +'<button class="lnk" style="color:var(--mut)" onclick="cancelEdit()">Cancel</button>'
+  +'</div></div>';
  h+='<div style="margin-top:14px"><input type="text" id="f_name" placeholder="Company name" value="'+esc(s.name)+'" oninput="setF(\'name\',this.value)"></div>';
  h+='<div class="row" style="margin-top:8px"><input type="text" id="f_ticker" placeholder="Ticker" value="'+esc(s.ticker)+'" oninput="setF(\'ticker\',this.value.toUpperCase())">'
   +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)">'
