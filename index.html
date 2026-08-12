@@ -383,7 +383,7 @@ function renderDash(){
    +'<button class="btn-o" onclick="exportData()">Export backup</button>'
    +'<button class="btn-o" onclick="document.getElementById(\'importFile\').click()">Import backup</button>'
    +'<input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(this)"></div>';
- right+='<div style="font-size:11px;color:var(--dim)">Once connected, every "Save &amp; timestamp" also pushes to Drive automatically — your source of truth across devices.</div>';
+ right+='<div style="font-size:11px;color:var(--dim)">Google Drive is the single source of truth. Every save writes straight to Drive, and every device loads from it — no local-only copies, nothing to reconcile.</div>';
 
  h+='<div class="dashgrid"><div class="col-main">'+left+'</div><div class="col-side">'+right+'</div></div>';
  document.getElementById("app").innerHTML=h;
@@ -749,7 +749,7 @@ function connectDrive(){
   driveState.token=resp.access_token;
   driveState.tokenExpiresAt=Date.now()+((resp.expires_in||3599)*1000);
   persistDriveMeta();
-  syncNow();
+  quietSync();   // Drive is source of truth — pull it, don't show a chooser
  };
  // Empty prompt = only ask again if actually needed (first time, or consent revoked) —
  // once granted, reconnects after a token naturally expires are quick, not a full re-consent.
@@ -806,20 +806,8 @@ function restoreLocalBackup(){
 }
 function syncNow(){
  if(!driveState.token){connectDrive();return;}
- snapshotLocalBackup(); // always taken before touching anything, regardless of what happens next
- setSyncStatus("Syncing…");
- pullFromDrive().then(function(remote){
-  if(!remote||!Array.isArray(remote.stocks)||!remote.stocks.length){
-   return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();});
-  }
-  // Never decide this silently — always show real counts and require an explicit, clearly-labeled tap.
-  syncPrompt={remote:remote.stocks,remoteWhen:remote.exportedAt,localCount:stocks.length,remoteCount:remote.stocks.length};
-  render();
- }).catch(function(err){
-  console.error(err);
-  setSyncStatus("Sync failed — try again");
-  alert("Sync failed: "+err.message);
- });
+ // Manual sync = pull Drive down (Drive is the source of truth). Silent, no chooser.
+ quietSync();
 }
 function syncPromptHTML(){
  var p=syncPrompt;if(!p)return"";
@@ -867,22 +855,23 @@ function autoConnectDrive(){
   try{ tc.requestAccessToken({prompt:""}); }catch(e){}
  })();
 }
-/* Quiet pull: unlike syncNow(), only prompts on a real conflict, never on a clean load. */
+/* Drive is the single source of truth. On load we always take Drive's copy —
+   no local-vs-remote chooser. The only exception is first-ever setup, where Drive
+   is still empty and this device has the seed/first data: then we push up so we
+   don't wipe it. Saves push straight to Drive (see autoSyncAfterSave), so the
+   freshest data always lives in Drive and every device simply mirrors it. */
 function quietSync(){
  if(!driveState.token)return;
  setSyncStatus("Syncing…");
  pullFromDrive().then(function(remote){
   var hasRemote=remote&&Array.isArray(remote.stocks)&&remote.stocks.length;
-  if(!hasRemote){                                   // Drive empty → push ours up
+  if(!hasRemote){                                   // Drive empty → seed it from this device
    return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();});
   }
-  var localEmpty=!stocks||!stocks.length;
-  if(localEmpty){                                   // nothing here yet → take Drive's copy
-   stocks=remote.stocks;persist();driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();return;
-  }
-  // both sides have data → defer to the explicit, safe chooser
-  syncPrompt={remote:remote.stocks,remoteWhen:remote.exportedAt,localCount:stocks.length,remoteCount:remote.stocks.length};
-  render();
+  // Drive has data → it wins, always. Overwrite local silently.
+  stocks=remote.stocks;persist();
+  driveState.lastSynced=Date.now();persistDriveMeta();
+  setSyncStatus("Synced just now");render();
  }).catch(function(err){console.warn(err);setSyncStatus("Sync failed — tap to retry");});
 }
 document.addEventListener("visibilitychange",function(){
