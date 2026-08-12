@@ -166,8 +166,36 @@ var CALCS={
  margin:{bankOnly:true,ann:true,note:"NIM = (Interest income − Finance cost) ÷ assets. Interest income = \"Revenue\" row · Finance cost = \"Interest\" row, right below it (Quarterly Results / P&L tab). Assets = \"Total Assets\" row (Balance Sheet tab) — Screener's \"Loans n Advances\" sub-line under Other Assets is unreliable for banks (uses a generic template, doesn't capture the real loan book), so don't use that instead. Note: Screener's own \"Financing Margin %\" isn't this — that's ÷ interest income, not ÷ assets, so don't type that number in here. Tick 'quarterly' to annualise ×4.",
   fields:[{k:"ii",label:"Interest income (₹)"},{k:"fc",label:"Finance cost (₹)"},{k:"ea",label:"Total assets (₹)"}],
   compute:function(r,a){return r.ii&&r.fc&&r.ea?(+r.ii-+r.fc)*(a?4:1)/+r.ea*100:null;}},
+ marginOPM:{note:"Average of OPM % across the last 5 FY. Screener → Annual P&L → OPM % row, five yearly columns — type each year in, the average is filled in above automatically.",
+  fields:[{k:"y1",label:"OPM %, FY-4"},{k:"y2",label:"OPM %, FY-3"},{k:"y3",label:"OPM %, FY-2"},{k:"y4",label:"OPM %, FY-1"},{k:"y5",label:"OPM %, latest FY"}],
+  compute:function(r){
+   var vals=["y1","y2","y3","y4","y5"].map(function(k){return r[k];}).filter(function(v){return v!==""&&v!=null;}).map(Number);
+   if(!vals.length)return null;
+   return vals.reduce(function(a,b){return a+b;},0)/vals.length;
+  }},
+ cashconv:{note:"3-yr aggregate: (OCF added up over 3 years) ÷ (Net profit added up over the same 3 years). Summing over the period smooths out any one unusual year, rather than averaging per-year ratios which can swing wildly if one year's profit is small. Both rows from Screener: Cash Flow → 'Cash from Operating Activity', and P&L → 'Net Profit'.",
+  fields:[
+   {k:"ocf1",label:"OCF, 3 yrs ago (₹ Cr)"},{k:"np1",label:"Net profit, 3 yrs ago (₹ Cr)"},
+   {k:"ocf2",label:"OCF, 2 yrs ago (₹ Cr)"},{k:"np2",label:"Net profit, 2 yrs ago (₹ Cr)"},
+   {k:"ocf3",label:"OCF, latest FY (₹ Cr)"},{k:"np3",label:"Net profit, latest FY (₹ Cr)"}
+  ],
+  compute:function(r){
+   var ok=["ocf1","ocf2","ocf3","np1","np2","np3"].every(function(k){return r[k]!==""&&r[k]!=null;});
+   if(!ok)return null;
+   var ocfSum=+r.ocf1+ +r.ocf2+ +r.ocf3,npSum=+r.np1+ +r.np2+ +r.np3;
+   return npSum?ocfSum/npSum:null;
+  }},
  salesG:cagr("Sales"),profitG:cagr("Net profit"),epsG:cagr("EPS (₹)")
 };
+/* Some filters need a different calculator depending on bank mode (margin: OPM avg vs NIM).
+   Quality signals never vary by bank mode — CALCS[q.id] alone is enough for those. */
+function pickCalc(fid,isBank){
+ if(fid==="margin")return isBank?CALCS.margin:CALCS.marginOPM;
+ var c=CALCS[fid];
+ if(!c)return null;
+ if(c.bankOnly&&!isBank)return null;
+ return c;
+}
 /* supplementary quality signals — NOT counted in the /12, shown as an overlay */
 var QUALITY=[
  {id:"cashconv",label:"Cash conversion (OCF ÷ Net profit)",type:"num",unit:"x",good:0.8,warn:0.5,bankSkip:true,note:"How much profit turns into real cash (3-5yr avg). ≥0.8 healthy; low = earnings-quality risk / possible accounting flags.",src:"Screener → Cash Flow ('Cash from Operating Activity') ÷ P&L (Net profit)"},
@@ -313,8 +341,7 @@ function renderDash(){
    +'<button class="btn-o" onclick="exportData()">Export backup</button>'
    +'<button class="btn-o" onclick="document.getElementById(\'importFile\').click()">Import backup</button>'
    +'<input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(this)"></div>';
- h+='<div class="row" style="margin-top:8px"><button class="btn-o" onclick="restoreLocalBackup()">Restore last local backup</button></div>';
- h+='<div style="font-size:11px;color:var(--dim);margin-top:6px">Once connected, every "Save &amp; timestamp" also pushes to Drive automatically — no separate Sync tap needed for day-to-day updates. A local backup snapshot is still taken before every sync too, just in case; restoring it never touches Drive.</div>';
+ h+='<div style="font-size:11px;color:var(--dim);margin-top:6px">Once connected, every "Save &amp; timestamp" also pushes to Drive automatically — that\'s your source of truth across devices, no separate Sync tap needed day to day.</div>';
  document.getElementById("app").innerHTML=h;
 }
 
@@ -459,7 +486,7 @@ function renderEditor(){
    var unit=s.isBank&&f.bankUnit?f.bankUnit:f.unit;
    var op=s.isBank&&f.bankOp?f.bankOp:f.op,t=s.isBank&&f.bankT!==undefined?f.bankT:f.t;
    var res=evalF(f,s.metrics[f.id],s.isBank);
-   var calc=CALCS[f.id],calcShown=calc&&(!calc.bankOnly||s.isBank)&&!skip;
+   var calc=pickCalc(f.id,s.isBank),calcShown=!!calc&&!skip;
    h+='<div><div class="fr">';
    h+='<span class="dot '+(res==="pass"?"p":res==="fail"?"f":"u")+'" id="dot_'+f.id+'"></span>';
    h+='<span class="flabel">'+label+(!skip&&f.type!=="bool"?'<span class="th">'+(op==="gt"?"＞":"＜")+' '+t+unit+'</span>':'')+(f.verify?'<span class="vf">· verify</span>':'')+'</span>';
@@ -481,15 +508,18 @@ function renderEditor(){
   var dc=st==="good"?"p":st==="concern"?"f":st==="warn"?"u":"u";
   var qlabel=s.isBank&&q.bankLabel?q.bankLabel:q.label;
   var qsrc=s.isBank&&q.bankSrc?q.bankSrc:q.src;
+  var qcalc=pickCalc(q.id,s.isBank),qcalcShown=!!qcalc&&!skip;
   h+='<div><div class="fr">';
   h+='<span class="dot '+(skip?"u":dc)+'" id="qdot_'+q.id+'" style="'+(st==="warn"?"background:var(--am)":"")+'"></span>';
   h+='<span class="flabel">'+qlabel+'</span>';
+  if(qcalcShown)h+='<button class="fbtn '+(openCalc[q.id]?"on":"")+'" onclick="toggleCalc(\''+q.id+'\')">ƒ</button>';
   if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
-  else if(q.type==="num"){h+='<div class="vinput"><input class="num" type="number" step="any" value="'+(s.metrics[q.id]!=null?s.metrics[q.id]:"")+'" placeholder="—" oninput="setQNum(\''+q.id+'\',this.value)"><span class="u">'+q.unit+'</span></div>';}
+  else if(q.type==="num"){h+='<div class="vinput"><input class="num" type="number" step="any" id="m_'+q.id+'" value="'+(s.metrics[q.id]!=null?s.metrics[q.id]:"")+'" placeholder="—" oninput="setQNum(\''+q.id+'\',this.value)"><span class="u">'+q.unit+'</span></div>';}
   else if(q.type==="tri"){h+=triHTML(q.id,s.metrics[q.id]);}
   else{h+='<div class="wrapf" style="width:auto;justify-content:flex-end">';q.opts.forEach(function(o){h+='<button class="valbtn '+(s.metrics[q.id]===o?"on":"")+'" style="font-size:11px;padding:4px 7px" onclick="setQ(\''+q.id+'\',\''+o+'\')">'+o+'</button>';});h+='</div>';}
   h+='</div><div style="font-size:11px;color:var(--dim);margin:-2px 0 3px 19px">'+q.note+'</div>';
   if(qsrc&&!skip)h+='<div class="src" style="margin-bottom:10px">📍 '+qsrc+'</div>';
+  if(qcalcShown&&openCalc[q.id])h+=calcHTML(q.id,qcalc,s.metrics[q.id+"__raw"]||{});
   h+='</div>';
  });
  h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
@@ -533,7 +563,7 @@ function setVal(v){draft.valuation=v;renderEditor();}
 function toggleCalc(id){openCalc[id]=!openCalc[id];renderEditor();}
 function setRaw(id,k,val){
  var raw=draft.metrics[id+"__raw"]||{};raw[k]=val;draft.metrics[id+"__raw"]=raw;
- var calc=CALCS[id],res=calc.compute(raw,raw.ann);
+ var calc=pickCalc(id,draft.isBank),res=calc.compute(raw,raw.ann);
  if(res!=null&&!isNaN(res)){var rv=String(Math.round(res*100)/100);draft.metrics[id]=rv;var inp=document.getElementById("m_"+id);if(inp)inp.value=rv;}
  refreshLive();
 }
@@ -550,6 +580,12 @@ function valboxHTML(s){
 function refreshLive(){
  var x=score(draft),v=verd(x.p),bt=buyTag(x.p,draft.valuation);
  FILTERS.forEach(function(f){var d=document.getElementById("dot_"+f.id);if(d){var res=evalF(f,draft.metrics[f.id],draft.isBank);d.className="dot "+(res==="pass"?"p":res==="fail"?"f":"u");}});
+ QUALITY.forEach(function(q){
+  var d=document.getElementById("qdot_"+q.id);if(!d)return;
+  var skip=draft.isBank&&q.bankSkip,st=evalQ(q,draft.metrics[q.id],draft.isBank);
+  var dc=st==="good"?"p":st==="concern"?"f":st==="warn"?"u":"u";
+  d.className="dot "+(skip?"u":dc);d.style.background=(!skip&&st==="warn")?"var(--am)":"";
+ });
  var lm=document.getElementById("liveMeter");if(lm)lm.innerHTML=meterHTML(x.r);
  var ls=document.getElementById("liveScore");if(ls){ls.innerHTML=x.p+'<span>/12</span>';ls.className="score "+v.c;}
  var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,draft.valuation);la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
@@ -722,7 +758,7 @@ function syncPromptHTML(){
   +'<h3>Drive already has saved data</h3>'
   +'<p class="sub">This device currently has <b>'+p.localCount+'</b> stock(s). Drive has <b>'+p.remoteCount+'</b> stock(s)'
   +(p.remoteWhen?', last saved '+esc(new Date(p.remoteWhen).toLocaleString()):'')+'. '
-  +'Whatever you pick, this device\'s current data is already backed up locally — <span class="lnk c" style="cursor:pointer" onclick="restoreLocalBackup()">restore it</span> any time from Settings if needed.</p>'
+  +'Whatever you pick, this device\'s current data was snapshotted right before this — <span class="lnk c" style="cursor:pointer" onclick="restoreLocalBackup()">undo and restore it</span> if you pick wrong.</p>'
   +'<button class="btn" style="width:100%;margin-bottom:8px" onclick="resolveSyncPrompt(\'keep\')">Keep this device\'s '+p.localCount+' — push to Drive</button>'
   +'<button class="btn-o" style="width:100%;margin-bottom:8px" onclick="resolveSyncPrompt(\'load\')">Load Drive\'s '+p.remoteCount+' instead</button>'
   +'<button class="lnk" style="display:block;width:100%;text-align:center;color:var(--dim)" onclick="resolveSyncPrompt(\'cancel\')">Cancel, decide later</button>'
