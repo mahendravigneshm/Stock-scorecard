@@ -73,6 +73,10 @@
   .flabel .vf{color:rgba(251,191,36,.7);font-size:11px;margin-left:4px}
   .fbtn{font-family:ui-monospace,monospace;font-size:13px;border:1px solid var(--line);color:var(--cyan);border-radius:5px;padding:3px 7px}
   .fbtn.on{background:var(--cyan);color:#052e33;border-color:var(--cyan)}
+  .ibtn{font-family:ui-serif,Georgia,serif;font-weight:700;font-size:13px;border:1px solid var(--line);color:var(--mut);border-radius:50%;width:24px;height:24px;padding:0;line-height:1;flex:none}
+  .ibtn.on{background:var(--mut);color:var(--bg);border-color:var(--mut)}
+  .infobox{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:2px 0 10px 19px;font-size:12px;line-height:1.55;color:var(--mut)}
+  .infobox b{color:var(--txt);font-weight:600}
   .vinput{display:flex;align-items:center;gap:5px;width:120px;flex:none}
   .vinput .u{font-size:12px;color:var(--dim);width:14px}
   .tri{display:flex;width:120px;flex:none;border:1px solid var(--line);border-radius:6px;overflow:hidden;font-size:12px}
@@ -146,22 +150,22 @@
 /* ===== framework ===== */
 var CATS=["Profitability","Growth","Financial health","Ownership","Valuation"];
 var FILTERS=[
- {id:"roe",cat:"Profitability",label:"ROE",bankLabel:"ROE",unit:"%",op:"gt",t:15,bankT:15,src:"Screener → top ratios box (ROE %)"},
- {id:"roce",cat:"Profitability",label:"ROCE",bankLabel:"ROA",unit:"%",op:"gt",t:15,bankT:1,bankUnit:"%",src:"Screener → top ratios box (ROCE %)",bankSrc:"P&L Net profit ÷ Balance-sheet Total assets, or the bank's investor presentation (ROA)"},
- {id:"margin",cat:"Profitability",label:"5Y EBITDA margin",bankLabel:"Net interest margin",unit:"%",op:"gt",t:15,bankT:3,src:"Screener → P&L → OPM % row; average the last 5 years",bankSrc:"The bank's quarterly investor presentation (NIM), or (Interest income − Finance cost) ÷ assets"},
- {id:"salesG",cat:"Growth",label:"Sales growth · 5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Sales Growth' box (5-yr)"},
- {id:"profitG",cat:"Growth",label:"Profit growth · 3-5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Profit Growth' box (5-yr)"},
- {id:"epsG",cat:"Growth",label:"EPS growth · 5Y",unit:"%",op:"gt",t:10,src:"Screener → P&L → 'EPS in Rs' row, two years apart (or use ƒ)"},
- {id:"de",cat:"Financial health",label:"Debt to equity",bankLabel:"Capital adequacy ratio",unit:"",op:"lt",t:1,bankT:12,bankOp:"gt",bankUnit:"%",src:"Screener → top ratios box (Debt to equity)",bankSrc:"Screener ratios or the results Annexure (Capital Adequacy Ratio)"},
- {id:"icr",cat:"Financial health",label:"Interest coverage",unit:"x",op:"gt",t:3,bankSkip:true,src:"Screener → ratios, or P&L: EBIT ÷ Interest"},
- {id:"ocf",cat:"Financial health",label:"Positive OCF, 5 yrs",type:"bool",bankSkip:true,src:"Screener → Cash Flow tab → 'Cash from Operating Activity' (all 5 yrs positive?)"},
- {id:"dii",cat:"Ownership",label:"DII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: DIIs, latest vs 6 months ago"},
- {id:"fii",cat:"Ownership",label:"FII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: FIIs, latest vs 6 months ago"},
- {id:"pledge",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"},
- {id:"peVsHist",cat:"Valuation",label:"P/E vs its own 5Y median",unit:"%",op:"lt",t:0,src:"Screener → current P/E vs the stock's 5-yr median P/E. Enter the % difference: (current − median) ÷ median × 100. Negative = cheaper than its own history (passes). Tickertape shows this directly under 'PE Ratio' vs historical."},
- {id:"peVsSector",cat:"Valuation",label:"P/E vs sector median",unit:"%",op:"lt",t:0,bankSkip:false,src:"Screener 'Industry PE' (top ratios box) vs the stock's P/E. Enter (stock PE − industry PE) ÷ industry PE × 100. Negative = cheaper than peers (passes)."},
- {id:"pb",cat:"Valuation",label:"P/B (banks & financials)",unit:"",op:"lt",t:3,onlyBank:true,src:"Screener → top ratios box (Price to Book). For a quality bank, under ~3 is reasonable; pair it with high ROE. Non-banks can skip this."},
- {id:"divYield",cat:"Valuation",label:"Dividend yield",unit:"%",op:"gt",t:1,src:"Screener → top ratios box (Dividend Yield %). Above ~1% for a large-cap indicates real cash returns; growth stocks may legitimately be lower."}
+ {id:"roe",why:"<b>What it tracks:</b> profit generated per rupee of shareholder equity. <b>Why it matters:</b> it shows how efficiently the company turns owners' money into profit — a consistently high ROE is the hallmark of a quality business that compounds wealth. Above 15% is good; above 20% is excellent.<br><br><b>Which number to enter:</b> use the latest (most recent year) ROE — that's what Screener shows in its top ratios box. Then glance at the 5-year and 3-year ROE just below it: you want the latest to be <i>in line with or above</i> its own history, not a one-off spike.",cat:"Profitability",label:"ROE",bankLabel:"ROE",unit:"%",op:"gt",t:15,bankT:15,src:"Screener → top ratios box. Enter the latest ROE %. Check it against the '5 Yrs' and '3 Yrs' ROE shown right beside it — the latest should not be far below its own average."},
+ {id:"roce",why:"<b>What it tracks:</b> return on all the capital in the business (equity plus debt), before tax. <b>Why it matters:</b> unlike ROE it can't be flattered by taking on debt, so it's a cleaner test of how well management uses total capital. Above 15% signals a genuinely productive business.<br><br><b>Which number to enter:</b> use the latest (most recent year) ROCE from Screener's top ratios box. The '5 Yrs' and '3 Yrs' ROCE shown beside it tell you if the latest is consistent — a quality business holds a high ROCE across years, not just once.",cat:"Profitability",label:"ROCE",bankLabel:"ROA",unit:"%",op:"gt",t:15,bankT:1,bankUnit:"%",src:"Screener → top ratios box. Enter the latest ROCE %. Compare with the '5 Yrs' / '3 Yrs' ROCE beside it — consistency matters as much as the level.",bankSrc:"P&L Net profit ÷ Balance-sheet Total assets, or the bank's investor presentation (ROA)"},
+ {id:"margin",why:"<b>What it tracks:</b> operating profit as a % of sales, averaged over 5 years. <b>Why it matters:</b> fat, stable margins mean pricing power and a moat — the company can raise prices or absorb cost shocks. Averaging 5 years strips out one-off good or bad years.",cat:"Profitability",label:"5Y EBITDA margin",bankLabel:"Net interest margin",unit:"%",op:"gt",t:15,bankT:3,src:"Screener → P&L → OPM % row; average the last 5 years",bankSrc:"The bank's quarterly investor presentation (NIM), or (Interest income − Finance cost) ÷ assets"},
+ {id:"salesG",why:"<b>What it tracks:</b> how fast revenue has compounded over 5 years. <b>Why it matters:</b> profit growth without sales growth eventually runs out of room. Durable revenue growth shows the business is genuinely expanding, not just cutting costs.",cat:"Growth",label:"Sales growth · 5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Sales Growth' box (5-yr)"},
+ {id:"profitG",why:"<b>What it tracks:</b> compounded growth in net profit. <b>Why it matters:</b> it's the bottom line owners actually receive. Profit growing faster than sales means margins are improving too — a very healthy sign.",cat:"Growth",label:"Profit growth · 3-5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Profit Growth' box (5-yr)"},
+ {id:"epsG",why:"<b>What it tracks:</b> growth in earnings per share. <b>Why it matters:</b> profit can rise while EPS stagnates if the company keeps issuing shares (diluting you). EPS growth is what actually accrues to each share you own.",cat:"Growth",label:"EPS growth · 5Y",unit:"%",op:"gt",t:10,src:"Screener → P&L → 'EPS in Rs' row, two years apart (or use ƒ)"},
+ {id:"de",why:"<b>What it tracks:</b> total debt relative to shareholder equity. <b>Why it matters:</b> high debt is the single most common cause of permanent capital loss — it turns a bad year into a solvency crisis. Below 1 is comfortable for most non-financial businesses; lower is safer.",cat:"Financial health",label:"Debt to equity",bankLabel:"Capital adequacy ratio",unit:"",op:"lt",t:1,bankT:12,bankOp:"gt",bankUnit:"%",src:"Screener → top ratios box (Debt to equity)",bankSrc:"Screener ratios or the results Annexure (Capital Adequacy Ratio)"},
+ {id:"icr",why:"<b>What it tracks:</b> how many times operating profit covers interest payments. <b>Why it matters:</b> it's an early-warning gauge — a company that barely covers its interest is fragile to any downturn. Above 3x is safe; below 2x is a red flag.",cat:"Financial health",label:"Interest coverage",unit:"x",op:"gt",t:3,bankSkip:true,src:"Screener → ratios, or P&L: EBIT ÷ Interest"},
+ {id:"ocf",why:"<b>What it tracks:</b> whether operating cash flow was positive in each of the last 5 years. <b>Why it matters:</b> reported profit can be an accounting figure, but cash is real. A business that consistently generates cash from operations is genuinely healthy, not just profitable on paper.",cat:"Financial health",label:"Positive OCF, 5 yrs",type:"bool",bankSkip:true,src:"Screener → Cash Flow tab → 'Cash from Operating Activity' (all 5 yrs positive?)"},
+ {id:"dii",why:"<b>What it tracks:</b> whether domestic institutions (mutual funds, insurers) increased their stake over 6 months. <b>Why it matters:</b> these are professional investors with research teams; rising DII holding is a mild vote of confidence from informed money.",cat:"Ownership",label:"DII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: DIIs, latest vs 6 months ago"},
+ {id:"fii",why:"<b>What it tracks:</b> whether foreign institutional investors raised their stake over 6 months. <b>Why it matters:</b> FII flows are a similar informed-money signal, though they can be more momentum-driven and volatile than domestic flows.",cat:"Ownership",label:"FII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: FIIs, latest vs 6 months ago"},
+ {id:"pledge",why:"<b>What it tracks:</b> the % of promoter shares pledged as loan collateral. <b>Why it matters:</b> pledging means promoters have borrowed against their stake — if the price falls, forced selling can crash the stock. Under 10% is tolerable; ideally zero.",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"},
+ {id:"peVsHist",why:"<b>What it tracks:</b> today's P/E versus the stock's own 5-year median P/E. <b>Why it matters:</b> a great company can still be a poor investment if you overpay. Buying below its own historical average means you're getting it cheaper than the market usually prices it.",cat:"Valuation",label:"P/E vs its own 5Y median",unit:"%",op:"lt",t:0,src:"Tap ƒ and enter current P/E + 5-yr median P/E — both on Screener (top ratios box shows current; the P/E chart shows the 5-yr median). The app computes the rest."},
+ {id:"peVsSector",why:"<b>What it tracks:</b> the stock's P/E versus its industry's P/E. <b>Why it matters:</b> it shows whether you're paying a premium or discount versus direct peers. A quality leader may deserve a premium, but a large unexplained one is a caution.",cat:"Valuation",label:"P/E vs sector median",unit:"%",op:"lt",t:0,bankSkip:false,src:"Tap ƒ and enter the stock's P/E + Industry P/E — both in Screener's top ratios box. The app computes how far above or below the sector it trades."},
+ {id:"pb",why:"<b>What it tracks:</b> price relative to book value — the key valuation gauge for banks and financials. <b>Why it matters:</b> banks are valued off their equity base, not earnings multiples. A quality bank with high ROE can justify a higher P/B, but paying far above ~3x needs a strong reason.",cat:"Valuation",label:"P/B (banks & financials)",unit:"",op:"lt",t:3,onlyBank:true,src:"Screener → top ratios box (Price to Book). For a quality bank, under ~3 is reasonable; pair it with high ROE. Non-banks can skip this."},
+ {id:"divYield",why:"<b>What it tracks:</b> annual dividend as a % of the share price. <b>Why it matters:</b> it's real cash returned to you regardless of share-price moves, and a steady dividend signals genuine, distributable profits. Fast-growing firms may pay little and reinvest instead — which is fine.",cat:"Valuation",label:"Dividend yield",unit:"%",op:"gt",t:1,src:"Screener → top ratios box (Dividend Yield %). Above ~1% for a large-cap indicates real cash returns; growth stocks may legitimately be lower."}
 ];
 function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both figures from Screener's P&L. True CAGR is mathematically undefined when going from a loss to a profit (or profit to loss) — no real percentage describes that. A turnaround like that shows as 999% (very strong) or −999% (very weak) instead, the same convention Screener itself uses for undefined ratios — not a literal precise number, just an unambiguous signal either way.",
  fields:[{k:"start",label:n+", 5 yrs ago"},{k:"end",label:n+", latest"},{k:"yrs",label:"Yrs",def:"5",small:true}],
@@ -187,19 +191,38 @@ var CALCS={
    if(!vals.length)return null;
    return vals.reduce(function(a,b){return a+b;},0)/vals.length;
   }},
- cashconv:{note:"3-yr aggregate: (OCF added up over 3 years) ÷ (Net profit added up over the same 3 years). Summing over the period smooths out any one unusual year, rather than averaging per-year ratios which can swing wildly if one year's profit is small. Both rows from Screener: Cash Flow → 'Cash from Operating Activity', and P&L → 'Net Profit'.",
+ cashconv:{note:"5-yr aggregate: (OCF added up over 5 years) ÷ (Net profit added up over the same 5 years). Summing over the period smooths out any one unusual year, rather than averaging per-year ratios which can swing wildly if one year's profit is small. Both rows from Screener: Cash Flow → 'Cash from Operating Activity', and P&L → 'Net Profit'.",
   fields:[
-   {k:"ocf1",label:"OCF, 3 yrs ago (₹ Cr)"},{k:"np1",label:"Net profit, 3 yrs ago (₹ Cr)"},
-   {k:"ocf2",label:"OCF, 2 yrs ago (₹ Cr)"},{k:"np2",label:"Net profit, 2 yrs ago (₹ Cr)"},
-   {k:"ocf3",label:"OCF, latest FY (₹ Cr)"},{k:"np3",label:"Net profit, latest FY (₹ Cr)"}
+   {k:"ocf1",label:"OCF, 5 yrs ago (₹ Cr)"},{k:"np1",label:"Net profit, 5 yrs ago (₹ Cr)"},
+   {k:"ocf2",label:"OCF, 4 yrs ago (₹ Cr)"},{k:"np2",label:"Net profit, 4 yrs ago (₹ Cr)"},
+   {k:"ocf3",label:"OCF, 3 yrs ago (₹ Cr)"},{k:"np3",label:"Net profit, 3 yrs ago (₹ Cr)"},
+   {k:"ocf4",label:"OCF, 2 yrs ago (₹ Cr)"},{k:"np4",label:"Net profit, 2 yrs ago (₹ Cr)"},
+   {k:"ocf5",label:"OCF, latest FY (₹ Cr)"},{k:"np5",label:"Net profit, latest FY (₹ Cr)"}
   ],
   compute:function(r){
-   var ok=["ocf1","ocf2","ocf3","np1","np2","np3"].every(function(k){return r[k]!==""&&r[k]!=null;});
-   if(!ok)return null;
-   var ocfSum=+r.ocf1+ +r.ocf2+ +r.ocf3,npSum=+r.np1+ +r.np2+ +r.np3;
+   var ks=["ocf1","ocf2","ocf3","ocf4","ocf5"],ns=["np1","np2","np3","np4","np5"];
+   var okO=ks.every(function(k){return r[k]!==""&&r[k]!=null;});
+   var okN=ns.every(function(k){return r[k]!==""&&r[k]!=null;});
+   if(!okO||!okN)return null;
+   var ocfSum=ks.reduce(function(s,k){return s+ +r[k];},0);
+   var npSum=ns.reduce(function(s,k){return s+ +r[k];},0);
    return npSum?ocfSum/npSum:null;
   }},
- salesG:cagr("Sales"),profitG:cagr("Net profit"),epsG:cagr("EPS (₹)")
+ salesG:cagr("Sales"),profitG:cagr("Net profit"),epsG:cagr("EPS (₹)"),
+ peVsHist:{note:"Type the current P/E and the stock's 5-year median P/E straight off Screener — the app works out how far above or below its own history it trades. Negative = cheaper than its own past (passes).",
+  fields:[{k:"cur",label:"Current P/E"},{k:"med",label:"5-yr median P/E"}],
+  compute:function(r){
+   if(r.cur===""||r.cur==null||r.med===""||r.med==null)return null;
+   var cur=+r.cur,med=+r.med; if(!med)return null;
+   return (cur-med)/med*100;
+  }},
+ peVsSector:{note:"Type the stock's current P/E and its industry's P/E — both shown in Screener's top ratios box ('Stock P/E' and 'Industry PE'). The app works out how far it sits above or below its peers. Negative = cheaper than the sector (passes).",
+  fields:[{k:"cur",label:"Stock P/E"},{k:"ind",label:"Industry P/E"}],
+  compute:function(r){
+   if(r.cur===""||r.cur==null||r.ind===""||r.ind==null)return null;
+   var cur=+r.cur,ind=+r.ind; if(!ind)return null;
+   return (cur-ind)/ind*100;
+  }}
 };
 /* Some filters need a different calculator depending on bank mode (margin: OPM avg vs NIM).
    Quality signals never vary by bank mode — CALCS[q.id] alone is enough for those. */
@@ -212,12 +235,12 @@ function pickCalc(fid,isBank){
 }
 /* supplementary quality signals — NOT counted in the /12, shown as an overlay */
 var QUALITY=[
- {id:"cashconv",label:"Cash conversion (OCF ÷ Net profit)",type:"num",unit:"x",good:0.8,warn:0.5,bankSkip:true,note:"How much profit turns into real cash (3-5yr avg). ≥0.8 healthy; low = earnings-quality risk / possible accounting flags.",src:"Screener → Cash Flow ('Cash from Operating Activity') ÷ P&L (Net profit)"},
- {id:"fcf",label:"Free cash flow positive",type:"tri",bankSkip:true,note:"OCF minus capex. Positive = self-funding growth; negative = capex-hungry or burning cash.",src:"Screener → Cash Flow tab → 'Free Cash Flow' row"},
- {id:"promTrend",label:"Promoter holding trend",type:"pick",opts:["Rising","Stable","Falling"],good:"Rising",warn:"Stable",note:"Promoters buying is a strong insider signal; a falling stake is a red flag the score misses. Some companies (e.g. HDFC Bank, post its 2023 merger) genuinely have no promoter — shows as 0%, not missing data. Pick Stable in that case, not a red flag.",src:"Screener → Shareholding → Promoters row, across quarters"},
- {id:"marginTrend",label:"Operating margin trend",bankLabel:"Net interest margin trend",type:"pick",opts:["Expanding","Stable","Contracting"],good:"Expanding",warn:"Stable",note:"Direction of profitability — expanding beats a high-but-shrinking margin.",src:"Screener → P&L → OPM % row: rising or falling?",bankSrc:"Quarterly results / investor presentation — is NIM rising or falling over recent quarters?"},
- {id:"roic",label:"ROIC vs cost of capital",type:"num",unit:"%",good:15,warn:12,bankSkip:true,note:"Return on invested capital — the purest value-creation test. Must beat cost of capital (~12% in India); below that, growth destroys value. ≥15% = true compounder.",src:"Tickertape Scorecard (ROIC), or Screener ROCE as a proxy"},
- {id:"peg",label:"PEG · P/E ÷ profit growth",type:"num",low:true,unit:"",good:1,warn:1.5,note:"Valuation relative to growth. <1 = cheap for its growth; >1.5 = paying up. Cross-checks the Valuation Comfort call.",src:"Tickertape (PEG ratio), or Screener: current P/E ÷ profit-growth %"}
+ {id:"cashconv",why:"<b>What it tracks:</b> how much of reported profit turned into actual operating cash, over 5 years. <b>Why it matters:</b> it's the single best earnings-quality check. If profit is high but cash conversion is low, the profit may be tied up in receivables or inventory — or be an accounting mirage.",label:"Cash conversion (OCF ÷ Net profit)",type:"num",unit:"x",good:0.8,warn:0.5,bankSkip:true,note:"How much profit turns into real cash (5-yr aggregate). ≥0.8 healthy; low = earnings-quality risk / possible accounting flags.",src:"Screener → Cash Flow ('Cash from Operating Activity') ÷ P&L (Net profit)"},
+ {id:"fcf",why:"<b>What it tracks:</b> whether the company generates cash after funding its capital spending. <b>Why it matters:</b> free cash flow is what can be paid out, used to cut debt, or reinvested without borrowing. Persistent negative FCF means the business consumes cash to stay running.",label:"Free cash flow positive",type:"tri",bankSkip:true,note:"OCF minus capex. Positive = self-funding growth; negative = capex-hungry or burning cash.",src:"Screener → Cash Flow tab → 'Free Cash Flow' row"},
+ {id:"promTrend",why:"<b>What it tracks:</b> the direction of the promoter's (founder/parent) shareholding. <b>Why it matters:</b> promoters know the business best. Them buying more is a strong insider signal; a steadily falling stake is a warning the headline score won't catch.",label:"Promoter holding trend",type:"pick",opts:["Rising","Stable","Falling"],good:"Rising",warn:"Stable",note:"Promoters buying is a strong insider signal; a falling stake is a red flag the score misses. Some companies (e.g. HDFC Bank, post its 2023 merger) genuinely have no promoter — shows as 0%, not missing data. Pick Stable in that case, not a red flag.",src:"Screener → Shareholding → Promoters row, across quarters"},
+ {id:"marginTrend",why:"<b>What it tracks:</b> whether operating margins are expanding or shrinking over time. <b>Why it matters:</b> a high but falling margin can signal rising competition or cost pressure, while an expanding margin shows strengthening economics. Direction often matters more than the level.",label:"Operating margin trend",bankLabel:"Net interest margin trend",type:"pick",opts:["Expanding","Stable","Contracting"],good:"Expanding",warn:"Stable",note:"Direction of profitability — expanding beats a high-but-shrinking margin. For non-banks this is filled in automatically from the 5 OPM years you enter in the 5Y EBITDA margin calculator above; tap a button to override.",src:"Auto-derived from your 5Y EBITDA margin inputs. For banks, set manually from NIM trend in quarterly results.",bankSrc:"Quarterly results / investor presentation — is NIM rising or falling over recent quarters?"},
+ {id:"roic",why:"<b>What it tracks:</b> return on invested capital versus the ~12% cost of capital. <b>Why it matters:</b> it's the purest test of value creation — a company earning below its cost of capital destroys value even as it grows. Above 15% marks a true compounder.",label:"ROIC vs cost of capital",type:"num",unit:"%",good:15,warn:12,bankSkip:true,note:"Return on invested capital — the purest value-creation test. Must beat cost of capital (~12% in India); below that, growth destroys value. ≥15% = true compounder. For non-banks this is pre-filled from your ROCE figure (close enough for screening); edit it if you have the exact ROIC from Tickertape.",src:"Auto-filled from ROCE above. Override with Tickertape's ROIC if you have it."},
+ {id:"peg",why:"<b>What it tracks:</b> P/E divided by profit-growth rate. <b>Why it matters:</b> it puts price in the context of growth — a P/E of 30 is cheap for a company growing 40%, expensive for one growing 10%. Below 1 is attractive; above 1.5 means you're paying up for growth.",label:"PEG · P/E ÷ profit growth",type:"num",low:true,unit:"",good:1,warn:1.5,note:"Valuation relative to growth. <1 = cheap for its growth; >1.5 = paying up. Cross-checks the Valuation Comfort call.",src:"Tickertape (PEG ratio), or Screener: current P/E ÷ profit-growth %"}
 ];
 function evalQ(q,val,bank){
  if(bank&&q.bankSkip)return"na";
@@ -303,7 +326,7 @@ function SEED(){
 /* ===== state ===== */
 var KEY="stockScorecard:v1";
 var stocks=load(),draft=null,openCalc={};
-var view="dash",compareSel=[],syncPrompt=null;
+var view="dash",compareSel=[],syncPrompt=null,openInfo={};
 var driveState=Object.assign({token:null},loadDriveMeta());
 function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return SEED();}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));}catch(e){}}
@@ -540,10 +563,12 @@ function renderEditor(){
    h+='<span class="dot '+(res==="pass"?"p":res==="fail"?"f":"u")+'" id="dot_'+f.id+'"></span>';
    h+='<span class="flabel">'+label+(!skip&&f.type!=="bool"?'<span class="th">'+(op==="gt"?"＞":"＜")+' '+t+unit+'</span>':'')+(f.verify?'<span class="vf">· verify</span>':'')+'</span>';
    if(calcShown)h+='<button class="fbtn '+(openCalc[f.id]?"on":"")+'" onclick="toggleCalc(\''+f.id+'\')">ƒ</button>';
+   if(f.why)h+='<button class="ibtn '+(openInfo[f.id]?"on":"")+'" onclick="toggleInfo(\''+f.id+'\')" aria-label="What is this">!</button>';
    if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
    else if(f.type==="bool"){h+=triHTML(f.id,s.metrics[f.id]);}
    else{h+='<div class="vinput"><input class="num" type="number" step="any" id="m_'+f.id+'" value="'+(s.metrics[f.id]!=null?s.metrics[f.id]:"")+'" placeholder="—" oninput="setM(\''+f.id+'\',this.value)"><span class="u">'+unit+'</span></div>';}
    h+='</div>';
+   if(f.why&&openInfo[f.id])h+='<div class="infobox">'+f.why+'</div>';
    var src=s.isBank&&f.bankSrc?f.bankSrc:f.src;
    if(src&&!skip)h+='<div class="src">📍 '+src+'</div>';
    if(calcShown&&openCalc[f.id])h+=calcHTML(f.id,calc,s.metrics[f.id+"__raw"]||{});
@@ -560,13 +585,17 @@ function renderEditor(){
   var qcalc=pickCalc(q.id,s.isBank),qcalcShown=!!qcalc&&!skip;
   h+='<div><div class="fr">';
   h+='<span class="dot '+(skip?"u":dc)+'" id="qdot_'+q.id+'" style="'+(st==="warn"?"background:var(--am)":"")+'"></span>';
-  h+='<span class="flabel">'+qlabel+'</span>';
+  var autoTag=((q.id==="marginTrend"&&draft.metrics.marginTrendAuto&&!draft.metrics.marginTrendManual)||(q.id==="roic"&&draft.metrics.roicAuto&&!draft.metrics.roicManual))?' <span class="th" style="color:var(--cyan)">· auto</span>':'';
+  h+='<span class="flabel">'+qlabel+autoTag+'</span>';
   if(qcalcShown)h+='<button class="fbtn '+(openCalc[q.id]?"on":"")+'" onclick="toggleCalc(\''+q.id+'\')">ƒ</button>';
+  if(q.why)h+='<button class="ibtn '+(openInfo[q.id]?"on":"")+'" onclick="toggleInfo(\''+q.id+'\')" aria-label="What is this">!</button>';
   if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
   else if(q.type==="num"){h+='<div class="vinput"><input class="num" type="number" step="any" id="m_'+q.id+'" value="'+(s.metrics[q.id]!=null?s.metrics[q.id]:"")+'" placeholder="—" oninput="setQNum(\''+q.id+'\',this.value)"><span class="u">'+q.unit+'</span></div>';}
   else if(q.type==="tri"){h+=triHTML(q.id,s.metrics[q.id]);}
   else{h+='<div class="wrapf" style="width:auto;justify-content:flex-end">';q.opts.forEach(function(o){h+='<button class="valbtn '+(s.metrics[q.id]===o?"on":"")+'" style="font-size:11px;padding:4px 7px" onclick="setQ(\''+q.id+'\',\''+o+'\')">'+o+'</button>';});h+='</div>';}
-  h+='</div><div style="font-size:11px;color:var(--dim);margin:-2px 0 3px 19px">'+q.note+'</div>';
+  h+='</div>';
+  if(q.why&&openInfo[q.id])h+='<div class="infobox">'+q.why+'</div>';
+  h+='<div style="font-size:11px;color:var(--dim);margin:-2px 0 3px 19px">'+q.note+'</div>';
   if(qsrc&&!skip)h+='<div class="src" style="margin-bottom:10px">📍 '+qsrc+'</div>';
   if(qcalcShown&&openCalc[q.id])h+=calcHTML(q.id,qcalc,s.metrics[q.id+"__raw"]||{});
   h+='</div>';
@@ -596,8 +625,13 @@ function calcHTML(id,calc,raw){
 
 /* ===== editor events (targeted updates, no focus loss) ===== */
 function setF(k,val){draft[k]=val;}
-function setQ(id,val){draft.metrics[id]=val;renderEditor();}
+function setQ(id,val){
+ draft.metrics[id]=val;
+ if(id==="marginTrend"){draft.metrics.marginTrendManual=true;draft.metrics.marginTrendAuto=false;}
+ renderEditor();
+}
 function setQNum(id,val){
+ if(id==="roic"){draft.metrics.roicManual=true;draft.metrics.roicAuto=false;}
  draft.metrics[id]=val;
  var q=QUALITY.filter(function(x){return x.id===id;})[0];
  var skip=draft.isBank&&q.bankSkip,st=evalQ(q,val,draft.isBank);
@@ -605,16 +639,45 @@ function setQNum(id,val){
  var d=document.getElementById("qdot_"+id);
  if(d){d.className="dot "+(skip?"u":dc);d.style.background=(!skip&&st==="warn")?"var(--am)":"";}
 }
-function setM(id,val){draft.metrics[id]=val;refreshLive();}
+function setM(id,val){
+ draft.metrics[id]=val;
+ // ROIC ≈ ROCE for a screening tool (non-bank). Auto-fill ROIC from ROCE unless user set ROIC themselves.
+ if(id==="roce"&&!draft.isBank&&!draft.metrics.roicManual){
+  draft.metrics.roic=val;draft.metrics.roicAuto=true;
+  var ri=document.getElementById("m_roic");if(ri)ri.value=val;
+ }
+ refreshLive();
+}
 function setBool(id,val){draft.metrics[id]=val;document.getElementById("tri_"+id).outerHTML=triHTML(id,val);refreshLive();}
 function setBank(c){draft.isBank=c;renderEditor();}
 function setVal(v){draft.valuation=v;renderEditor();}
 function toggleCalc(id){openCalc[id]=!openCalc[id];renderEditor();}
+function toggleInfo(id){openInfo[id]=!openInfo[id];renderEditor();}
 function setRaw(id,k,val){
  var raw=draft.metrics[id+"__raw"]||{};raw[k]=val;draft.metrics[id+"__raw"]=raw;
  var calc=pickCalc(id,draft.isBank),res=calc.compute(raw,raw.ann);
  if(res!=null&&!isNaN(res)){var rv=String(Math.round(res*100)/100);draft.metrics[id]=rv;var inp=document.getElementById("m_"+id);if(inp)inp.value=rv;}
+ // Auto-derive Operating margin trend from the 5 OPM years entered in the margin calculator (non-bank).
+ if(id==="margin"&&!draft.isBank)deriveMarginTrend();
  refreshLive();
+}
+/* Reads y1..y5 (oldest→latest) from the OPM calculator and decides Expanding / Stable / Contracting
+   by comparing the recent average to the earlier average — a slope, not just first-vs-last, so one
+   odd year doesn't flip it. Only fills the trend if the user hasn't manually overridden it. */
+function deriveMarginTrend(){
+ var raw=draft.metrics["margin__raw"]||{};
+ var ys=["y1","y2","y3","y4","y5"].map(function(k){return raw[k];})
+   .filter(function(v){return v!==""&&v!=null&&!isNaN(+v);}).map(Number);
+ if(ys.length<3)return; // need enough points to call a trend
+ var half=Math.floor(ys.length/2);
+ var early=ys.slice(0,half),late=ys.slice(ys.length-half);
+ var eAvg=early.reduce(function(a,b){return a+b;},0)/early.length;
+ var lAvg=late.reduce(function(a,b){return a+b;},0)/late.length;
+ var diff=lAvg-eAvg;
+ var trend=diff>=1.5?"Expanding":diff<=-1.5?"Contracting":"Stable"; // ±1.5pp band = "Stable"
+ if(draft.metrics.marginTrendManual)return; // respect a manual pick
+ draft.metrics.marginTrend=trend;
+ draft.metrics.marginTrendAuto=true;
 }
 function valboxHTML(s){
  var x=score(s);
