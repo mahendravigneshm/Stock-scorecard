@@ -216,7 +216,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 var CATS=["Profitability","Growth","Financial health","Ownership","Valuation"];
 var FILTERS=[
  {id:"roe",why:"<b>What it tracks:</b> profit generated per rupee of shareholder equity. <b>Why it matters:</b> it shows how efficiently the company turns owners' money into profit — a consistently high ROE is the hallmark of a quality business that compounds wealth. Above 15% is good; above 20% is excellent.<br><br><b>Which number to enter:</b> use the latest (most recent year) ROE — that's what Screener shows in its top ratios box. Then glance at the 5-year and 3-year ROE just below it: you want the latest to be <i>in line with or above</i> its own history, not a one-off spike.",cat:"Profitability",label:"ROE",bankLabel:"ROE",unit:"%",op:"gt",t:15,bankT:15,src:"Screener → top ratios box. Enter the latest ROE %. Check it against the '5 Yrs' and '3 Yrs' ROE shown right beside it — the latest should not be far below its own average."},
- {id:"roce",why:"<b>What it tracks:</b> return on all the capital in the business (equity plus debt), before tax. <b>Why it matters:</b> unlike ROE it can't be flattered by taking on debt, so it's a cleaner test of how well management uses total capital. Above 15% signals a genuinely productive business.<br><br><b>Which number to enter:</b> use the latest (most recent year) ROCE from Screener's top ratios box. The '5 Yrs' and '3 Yrs' ROCE shown beside it tell you if the latest is consistent — a quality business holds a high ROCE across years, not just once.",cat:"Profitability",label:"ROCE",bankLabel:"ROA",unit:"%",op:"gt",t:15,bankT:1,bankUnit:"%",src:"Screener → top ratios box. Enter the latest ROCE %. Compare with the '5 Yrs' / '3 Yrs' ROCE beside it — consistency matters as much as the level.",bankSrc:"P&L Net profit ÷ Balance-sheet Total assets, or the bank's investor presentation (ROA)"},
+ {id:"roce",why:"<b>What it tracks:</b> return on all the capital in the business (equity plus debt), before tax. <b>Why it matters:</b> unlike ROE it can't be flattered by taking on debt, so it's a cleaner test of how well management uses total capital. Above 15% signals a genuinely productive business.<br><br><b>Which number to enter:</b> use the latest (most recent year) ROCE from Screener's top ratios box. The '5 Yrs' and '3 Yrs' ROCE shown beside it tell you if the latest is consistent — a quality business holds a high ROCE across years, not just once.",bankWhy:"<b>What it tracks:</b> Return on Assets — net profit as a % of the bank's total assets. <b>Why it matters:</b> for a bank, assets (mostly loans) are the engine, so ROA shows how profitably it deploys them. Banks run on thin margins, so the bar is lower than for ordinary businesses — above ~1% is healthy, above ~1.5% is strong. Pair it with ROE: high ROA with sensible leverage marks a well-run bank.",cat:"Profitability",label:"ROCE",bankLabel:"ROA",unit:"%",op:"gt",t:15,bankT:1,bankUnit:"%",src:"Screener → top ratios box. Enter the latest ROCE %. Compare with the '5 Yrs' / '3 Yrs' ROCE beside it — consistency matters as much as the level.",bankSrc:"P&L Net profit ÷ Balance-sheet Total assets, or the bank's investor presentation (ROA)"},
  {id:"margin",why:"<b>What it tracks:</b> operating profit as a % of sales, averaged over 5 years. <b>Why it matters:</b> fat, stable margins mean pricing power and a moat — the company can raise prices or absorb cost shocks. Averaging 5 years strips out one-off good or bad years.",cat:"Profitability",label:"5Y EBITDA margin",bankLabel:"Net interest margin",unit:"%",op:"gt",t:15,bankT:3,src:"Screener → P&L → OPM % row; average the last 5 years",bankSrc:"The bank's quarterly investor presentation (NIM), or (Interest income − Finance cost) ÷ assets"},
  {id:"salesG",why:"<b>What it tracks:</b> how fast revenue has compounded over 5 years. <b>Why it matters:</b> profit growth without sales growth eventually runs out of room. Durable revenue growth shows the business is genuinely expanding, not just cutting costs.",cat:"Growth",label:"Sales growth · 5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Sales Growth' box (5-yr)"},
  {id:"profitG",why:"<b>What it tracks:</b> compounded growth in net profit. <b>Why it matters:</b> it's the bottom line owners actually receive. Profit growing faster than sales means margins are improving too — a very healthy sign.",cat:"Growth",label:"Profit growth · 3-5Y",unit:"%",op:"gt",t:10,src:"Screener → 'Compounded Profit Growth' box (5-yr)"},
@@ -230,7 +230,7 @@ var FILTERS=[
  {id:"peVsHist",why:"<b>What it tracks:</b> today's P/E versus the stock's own 5-year median P/E. <b>Why it matters:</b> a great company can still be a poor investment if you overpay. Buying below its own historical average means you're getting it cheaper than the market usually prices it.",cat:"Valuation",label:"P/E vs its own history",unit:"%",op:"lt",t:0,src:"Tap ƒ, enter current P/E and the 3-yr & 5-yr median P/E (from the Screener P/E chart), then choose which median to judge against. 3-yr is fairer when the stock re-rated years ago."},
  {id:"peVsSector",why:"<b>What it tracks:</b> the stock's P/E versus its industry's P/E. <b>Why it matters:</b> it shows whether you're paying a premium or discount versus direct peers. A quality leader may deserve a premium, but a large unexplained one is a caution.",cat:"Valuation",label:"P/E vs sector median",unit:"%",op:"lt",t:0,bankSkip:false,src:"Tap ƒ and enter the stock's P/E + Industry P/E — both in Screener's top ratios box. The app computes how far above or below the sector it trades."},
  {id:"pb",why:"<b>What it tracks:</b> price relative to book value — the key valuation gauge for banks and financials. <b>Why it matters:</b> banks are valued off their equity base, not earnings multiples. A quality bank with high ROE can justify a higher P/B, but paying far above ~3x needs a strong reason.",cat:"Valuation",label:"P/B (banks & financials)",unit:"",op:"lt",t:3,onlyBank:true,src:"Screener → top ratios box (Price to Book). For a quality bank, under ~3 is reasonable; pair it with high ROE. Non-banks can skip this."},
- {id:"divYield",why:"<b>What it tracks:</b> annual dividend as a % of the share price. <b>Why it matters:</b> it's real cash returned to you regardless of share-price moves, and a steady dividend signals genuine, distributable profits. Fast-growing firms may pay little and reinvest instead — which is fine.",cat:"Valuation",label:"Dividend yield",unit:"%",op:"gt",t:1,src:"Screener → top ratios box (Dividend Yield %). Above ~1% for a large-cap indicates real cash returns; growth stocks may legitimately be lower."}
+
 ];
 function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both figures from Screener's P&L. True CAGR is mathematically undefined when going from a loss to a profit (or profit to loss) — no real percentage describes that. A turnaround like that shows as 999% (very strong) or −999% (very weak) instead, the same convention Screener itself uses for undefined ratios — not a literal precise number, just an unambiguous signal either way.",
  fields:[{k:"start",label:n+", 5 yrs ago"},{k:"end",label:n+", latest"},{k:"yrs",label:"Yrs",def:"5",small:true}],
@@ -304,6 +304,7 @@ function pickCalc(fid,isBank){
 /* supplementary quality signals — NOT counted in the /12, shown as an overlay */
 var QUALITY=[
  {id:"cashconv",why:"<b>What it tracks:</b> how much of reported profit turned into actual operating cash, over 5 years. <b>Why it matters:</b> it's the single best earnings-quality check. If profit is high but cash conversion is low, the profit may be tied up in receivables or inventory — or be an accounting mirage.",label:"Cash conversion (OCF ÷ Net profit)",type:"num",unit:"x",good:0.8,warn:0.5,bankSkip:true,note:"How much profit turns into real cash (5-yr aggregate). ≥0.8 healthy; low = earnings-quality risk / possible accounting flags.",src:"Screener → Cash Flow ('Cash from Operating Activity') ÷ P&L (Net profit)"},
+ {id:"divYield",why:"<b>What it tracks:</b> annual dividend as a % of the share price. <b>Why it matters:</b> it's cash returned to you, and a steady payout signals real, distributable profits. But it is a weak <i>quality</i> signal and is <b>not scored</b> — a high yield often just means the price has fallen, and many excellent compounders pay little because they reinvest at high returns. Shown here for context only.",label:"Dividend yield",type:"num",unit:"%",info:true,note:"Informational only — not part of the score. Screener → top ratios box (Dividend Yield %).",src:"Screener → top ratios box (Dividend Yield %)"},
  {id:"fcf",why:"<b>What it tracks:</b> whether the company generates cash after funding its capital spending. <b>Why it matters:</b> free cash flow is what can be paid out, used to cut debt, or reinvested without borrowing. Persistent negative FCF means the business consumes cash to stay running.",label:"Free cash flow positive",type:"tri",bankSkip:true,note:"OCF minus capex. Positive = self-funding growth; negative = capex-hungry or burning cash.",src:"Screener → Cash Flow tab → 'Free Cash Flow' row"},
  {id:"promTrend",why:"<b>What it tracks:</b> the direction of the promoter's (founder/parent) shareholding. <b>Why it matters:</b> promoters know the business best. Them buying more is a strong insider signal; a steadily falling stake is a warning the headline score won't catch.",label:"Promoter holding trend",type:"pick",opts:["Rising","Stable","Falling"],good:"Rising",warn:"Stable",note:"Promoters buying is a strong insider signal; a falling stake is a red flag the score misses. Some companies (e.g. HDFC Bank, post its 2023 merger) genuinely have no promoter — shows as 0%, not missing data. Pick Stable in that case, not a red flag.",src:"Screener → Shareholding → Promoters row, across quarters"},
  {id:"marginTrend",why:"<b>What it tracks:</b> whether operating margins are expanding or shrinking over time. <b>Why it matters:</b> a high but falling margin can signal rising competition or cost pressure, while an expanding margin shows strengthening economics. Direction often matters more than the level.",label:"Operating margin trend",bankLabel:"Net interest margin trend",type:"pick",opts:["Expanding","Stable","Contracting"],good:"Expanding",warn:"Stable",note:"Direction of profitability — expanding beats a high-but-shrinking margin. For non-banks this is filled in automatically from the 5 OPM years you enter in the 5Y EBITDA margin calculator above; tap a button to override.",src:"Auto-derived from your 5Y EBITDA margin inputs. For banks, set manually from NIM trend in quarterly results.",bankSrc:"Quarterly results / investor presentation — is NIM rising or falling over recent quarters?"},
@@ -311,6 +312,7 @@ var QUALITY=[
  {id:"peg",why:"<b>What it tracks:</b> P/E divided by profit-growth rate. <b>Why it matters:</b> it puts price in the context of growth — a P/E of 30 is cheap for a company growing 40%, expensive for one growing 10%. Below 1 is attractive; above 1.5 means you're paying up for growth.",label:"PEG · P/E ÷ profit growth",type:"num",low:true,unit:"",good:1,warn:1.5,note:"Valuation relative to growth. <1 = cheap for its growth; >1.5 = paying up. Cross-checks the Valuation Comfort call.",src:"Tickertape (PEG ratio), or Screener: current P/E ÷ profit-growth %"}
 ];
 function evalQ(q,val,bank){
+ if(q.info)return"info";
  if(bank&&q.bankSkip)return"na";
  if(val===""||val==null)return"unknown";
  if(q.type==="num"){var n=+val;if(isNaN(n))return"unknown";if(q.low)return n<=q.good?"good":n<=q.warn?"warn":"concern";return n>=q.good?"good":n>=q.warn?"warn":"concern";}
@@ -574,7 +576,8 @@ function persistHoldings(){try{localStorage.setItem(HKEY,JSON.stringify(holdings
 var view="dash",compareSel=[],syncPrompt=null,openInfo={};
 var driveState=Object.assign({token:null},loadDriveMeta());
 function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return SEED();}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));}catch(e){}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));localStorage.setItem(KEY+":ts",String(Date.now()));}catch(e){}}
+function localTs(){try{return +localStorage.getItem(KEY+":ts")||0;}catch(e){return 0;}}
 function daysSince(t){return t?Math.floor((Date.now()-t)/86400000):null;}
 function sectorAlloc(){
  var byW={},byC={},tot=0,anyW=false,n=stocks.length||1;
@@ -1106,7 +1109,20 @@ function cmpQualityCellHTML(q,s){
 function editStock(id){draft=JSON.parse(JSON.stringify(stocks.find(function(s){return s.id===id;})));openCalc={};render();}
 function addStock(){draft={id:"n"+Date.now(),name:"",ticker:"",sector:"",isBank:false,valuation:"",lastUpdated:null,history:[],metrics:{}};openCalc={};render();}
 function cancelEdit(){draft=null;openCalc={};render();}
-function delStock(id){if(confirm("Delete this stock?")){stocks=stocks.filter(function(s){return s.id!==id;});persist();if(draft&&draft.id===id)draft=null;compareSel=compareSel.filter(function(cid){return cid!==id;});render();}}
+function delStock(id){
+ if(!confirm("Delete this stock? This removes it from all your devices."))return;
+ stocks=stocks.filter(function(s){return s.id!==id;});
+ persist();
+ if(draft&&draft.id===id){draft=null;openCalc={};}
+ compareSel=compareSel.filter(function(cid){return cid!==id;});
+ render();
+ // Push the deletion to Drive so it doesn't come back on next sync
+ if(driveState.token){
+  setSyncStatus("Saving to Drive…");
+  pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus(driveStatusText());})
+   .catch(function(){setSyncStatus("Delete saved locally — tap Sync to update Drive");});
+ }
+}
 
 function renderEditor(){
  var s=draft,x=score(s),v=verd(x.p,x.max);
@@ -1136,12 +1152,13 @@ function renderEditor(){
    h+='<span class="dot '+(res==="pass"?"p":res==="fail"?"f":"u")+'" id="dot_'+f.id+'"></span>';
    h+='<span class="flabel">'+label+(!skip&&f.type!=="bool"?'<span class="th">'+(op==="gt"?"＞":"＜")+' '+t+unit+'</span>':'')+(f.verify?'<span class="vf">· verify</span>':'')+'</span>';
    if(calcShown)h+='<button class="fbtn '+(openCalc[f.id]?"on":"")+'" onclick="toggleCalc(\''+f.id+'\')">ƒ</button>';
-   if(f.why)h+='<button class="ibtn '+(openInfo[f.id]?"on":"")+'" onclick="toggleInfo(\''+f.id+'\')" aria-label="What is this">!</button>';
+   var fWhy=(s.isBank&&f.bankWhy)?f.bankWhy:f.why;
+   if(fWhy)h+='<button class="ibtn '+(openInfo[f.id]?"on":"")+'" onclick="toggleInfo(\''+f.id+'\')" aria-label="What is this">!</button>';
    if(skip){h+='<span class="tkr mono" style="width:120px;text-align:right">N/A</span>';}
    else if(f.type==="bool"){h+=triHTML(f.id,s.metrics[f.id]);}
    else{h+='<div class="vinput"><input class="num" type="number" step="any" id="m_'+f.id+'" value="'+(s.metrics[f.id]!=null?s.metrics[f.id]:"")+'" placeholder="—" oninput="setM(\''+f.id+'\',this.value)"><span class="u">'+unit+'</span></div>';}
    h+='</div>';
-   if(f.why&&openInfo[f.id])h+='<div class="infobox">'+f.why+'</div>';
+   if(fWhy&&openInfo[f.id])h+='<div class="infobox">'+fWhy+'</div>';
    var src=s.isBank&&f.bankSrc?f.bankSrc:f.src;
    if(src&&!skip)h+='<div class="src">📍 '+src+'</div>';
    if(calcShown&&openCalc[f.id])h+=calcHTML(f.id,calc,s.metrics[f.id+"__raw"]||{});
@@ -1441,7 +1458,8 @@ function pullFromDrive(){
 }
 function pushHoldings(){return pushToDrive();}
 function pushToDrive(){
- var body=JSON.stringify({stocks:stocks,holdings:holdings,alertRules:alertRules,exportedAt:new Date().toISOString()},null,2);
+ window._lastPushTs=Date.now();
+ var body=JSON.stringify({stocks:stocks,holdings:holdings,alertRules:alertRules,savedAt:new Date().toISOString(),exportedAt:new Date().toISOString()},null,2);
  var metadata={name:DRIVE_CONFIG.fileName,mimeType:"application/json"};
  var boundary="sc_boundary_"+Date.now();
  var multipart="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(metadata)+"\r\n"
@@ -1528,8 +1546,19 @@ function quietSync(){
   if(!hasRemote){                                   // Drive empty → seed it from this device
    return pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();});
   }
-  // Drive has data → it wins, always. Overwrite local silently.
+  // Decide by recency, not "Drive always wins" — this prevents a stale Drive copy
+  // from wiping edits you made on this device while it was offline.
+  var remoteTs=remote.savedAt?Date.parse(remote.savedAt):0;
+  var localHas=stocks&&stocks.length;
+  if(localHas && localTs() > remoteTs+1000){
+   // This device has newer edits than Drive → push ours up, don't overwrite.
+   pushToDrive().then(function(){driveState.lastSynced=Date.now();persistDriveMeta();setSyncStatus("Synced just now");render();})
+    .catch(function(){setSyncStatus("Local is newer — Drive sync pending");render();});
+   return;
+  }
+  // Drive is newer (or same) → take it.
   stocks=remote.stocks;persist();
+  try{localStorage.setItem(KEY+":ts",String(remoteTs||Date.now()));}catch(e){}
   if(remote.holdings){holdings=remote.holdings;persistHoldings();}
   if(remote.alertRules){alertRules=remote.alertRules;persistRules();}
   driveState.lastSynced=Date.now();persistDriveMeta();
