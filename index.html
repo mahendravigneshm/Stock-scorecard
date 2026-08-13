@@ -63,6 +63,9 @@
   .lnk{font-size:12px}.lnk.c{color:var(--cyan)}.lnk.r{color:var(--rd)}
   input[type=number],input[type=text]{background:var(--card2);border:1px solid var(--line);border-radius:6px;color:var(--txt);padding:8px 10px;font-size:14px;width:100%;font-family:inherit}
   input.num{text-align:right;font-family:ui-monospace,monospace}
+  input[type=number]{-moz-appearance:textfield}
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input:focus{outline:none;border-color:var(--cyan)}
   .cat{font-size:11px;font-family:ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:16px 0 8px}
   .fr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -281,9 +284,24 @@ function normalizeVal(v){
  if(v==="Expensive"||v==="Very Expensive")return"Overvalued";
  return v;
 }
+/* Valuation now comes from the user's own P/E metrics, not a borrowed Tickertape label.
+   peVsHist and peVsSector are % differences vs the stock's own median and its sector
+   (negative = cheaper). We blend whichever are filled and map to the same 3 tiers. */
+function valFromMetrics(s){
+ var m=s.metrics||{};
+ var parts=[];
+ if(m.peVsHist!==""&&m.peVsHist!=null&&!isNaN(+m.peVsHist))parts.push(+m.peVsHist);
+ if(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))parts.push(+m.peVsSector);
+ if(!parts.length)return"";               // no P/E data yet → unknown
+ var avg=parts.reduce(function(a,b){return a+b;},0)/parts.length;
+ // ≤ −10% cheaper = Undervalued · within ±10% = Fairly Valued · ≥ +10% pricier = Overvalued
+ if(avg<=-10)return"Undervalued";
+ if(avg>=10)return"Overvalued";
+ return"Fairly Valued";
+}
 function action(p,v){v=normalizeVal(v);if(p<7)return"Exit in a planned way, over 2-3 sessions";
  if(p<10)return"Watch for 1 quarter — exit if it doesn't improve";
- if(!v)return"Strong — now run the valuation check";
+ if(!v)return"Strong — fill the two P/E metrics to get a buy/hold call";
  if(v==="Undervalued")return"Add more, systematically";
  if(v==="Fairly Valued")return"Hold, accumulate on dips";
  return"Hold — do not add. Wait for price to return to fair";}
@@ -293,7 +311,7 @@ function buyTag(p,v){
  v=normalizeVal(v);
  if(p<7)return{l:"Not a buy",c:"rd"};
  if(p<10)return{l:"Not yet",c:"am"};
- if(!v)return{l:"Check valuation",c:"am"};
+ if(!v)return{l:"Add P/E data",c:"am"};
  if(v==="Undervalued")return{l:"Buy",c:"em"};
  if(v==="Fairly Valued")return{l:"Buy on dips",c:"am"};
  return{l:"Wait — too pricey",c:"rd"};
@@ -415,7 +433,7 @@ function renderDash(){
 /* One compact row per stock: name/sector, score, short buy call, review status.
    Tap anywhere on the row to open the full filter breakdown (same as before). */
 function trowHTML(s,x){
- var v=verd(x.p,x.max),bt=buyTag(x.p,s.valuation);
+ var v=verd(x.p,x.max),bt=buyTag(x.p,valFromMetrics(s));
  var d=daysSince(s.lastUpdated);
  var rev=d===null?"New":d>90?"Due":d+"d";
  var revCls=(d===null||d>90)?"rd":"";
@@ -482,7 +500,7 @@ function compareTableHTML(sel){
 
  h+='<tr><td class="lbl">Score</td>'+sel.map(function(s){var x=score(s),v=verd(x.p,x.max);return'<td><span class="cmpv '+v.c+'" style="font-weight:700">'+x.p+'/'+x.max+'</span></td>';}).join('')+'</tr>';
  h+='<tr><td class="lbl">Verdict</td>'+sel.map(function(s){var v=verd(score(s).p);return'<td><span class="'+v.c+'" style="font-weight:600">'+v.l+'</span></td>';}).join('')+'</tr>';
- h+='<tr><td class="lbl">Buy call</td>'+sel.map(function(s){var x=score(s),bt=buyTag(x.p,s.valuation);return'<td><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Buy call</td>'+sel.map(function(s){var x=score(s),bt=buyTag(x.p,valFromMetrics(s));return'<td><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></td>';}).join('')+'</tr>';
 
  var lastCat=null;
  FILTERS.forEach(function(f){
@@ -601,7 +619,7 @@ function renderEditor(){
   h+='</div>';
  });
  h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
- h+='<div class="live"><div><div id="liveMeter">'+meterHTML(x.r)+'</div><div class="'+buyTag(x.p,s.valuation).c+'" style="margin-top:8px;font-size:13px" id="liveAction"><b>'+buyTag(x.p,s.valuation).l+'</b> — '+action(x.p,s.valuation)+'</div></div>'
+ h+='<div class="live"><div><div id="liveMeter">'+meterHTML(x.r)+'</div><div class="'+buyTag(x.p,valFromMetrics(s)).c+'" style="margin-top:8px;font-size:13px" id="liveAction"><b>'+buyTag(x.p,valFromMetrics(s)).l+'</b> — '+action(x.p,valFromMetrics(s))+'</div></div>'
   +'<div style="text-align:right"><div class="score '+v.c+'" id="liveScore">'+x.p+'<span>/'+x.max+'</span></div></div></div>';
  h+='<button class="btn" style="width:100%" onclick="saveDraft()">Save &amp; timestamp</button>';
  document.getElementById("app").innerHTML=h;
@@ -650,7 +668,7 @@ function setM(id,val){
 }
 function setBool(id,val){draft.metrics[id]=val;document.getElementById("tri_"+id).outerHTML=triHTML(id,val);refreshLive();}
 function setBank(c){draft.isBank=c;renderEditor();}
-function setVal(v){draft.valuation=v;renderEditor();}
+function setVal(){/* valuation is now derived from P/E metrics — manual picker removed */}
 function toggleCalc(id){openCalc[id]=!openCalc[id];renderEditor();}
 function toggleInfo(id){openInfo[id]=!openInfo[id];renderEditor();}
 function setRaw(id,k,val){
@@ -682,15 +700,23 @@ function deriveMarginTrend(){
 function valboxHTML(s){
  var x=score(s);
  if(x.p<10)return"";
- var norm=normalizeVal(s.valuation);
- var h='<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation check</div>'
-  +'<div class="sub" style="margin:0 0 8px">Match whatever Tickertape shows for this stock\'s valuation:</div><div class="wrapf">';
- VALS.forEach(function(o){h+='<button class="valbtn '+(norm===o?"on":"")+'" onclick="setVal(\''+o+'\')">'+o+'</button>';});
- h+='</div></div>';
- return h;
+ var v=valFromMetrics(s);
+ var col=v==="Undervalued"?"var(--em)":v==="Overvalued"?"var(--rd)":v==="Fairly Valued"?"var(--am)":"var(--dim)";
+ var body;
+ if(!v){
+  body='<div class="sub" style="margin:0">Fill in the two <b>P/E</b> metrics (vs its own history, vs sector) above to get a valuation call. Your own numbers drive this — nothing borrowed from another site.</div>';
+ }else{
+  var m=s.metrics||{};
+  var bits=[];
+  if(m.peVsHist!==""&&m.peVsHist!=null)bits.push((+m.peVsHist>=0?"+":"")+(+m.peVsHist).toFixed(0)+"% vs its 5-yr median");
+  if(m.peVsSector!==""&&m.peVsSector!=null)bits.push((+m.peVsSector>=0?"+":"")+(+m.peVsSector).toFixed(0)+"% vs sector");
+  body='<div style="font-size:16px;font-weight:700;color:'+col+';margin-bottom:4px">'+v+'</div>'
+   +'<div class="sub" style="margin:0">Derived from your P/E inputs: '+bits.join(" · ")+'. Negative = cheaper.</div>';
+ }
+ return '<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation — from your P/E metrics</div>'+body+'</div>';
 }
 function refreshLive(){
- var x=score(draft),v=verd(x.p,x.max),bt=buyTag(x.p,draft.valuation);
+ var x=score(draft),v=verd(x.p,x.max),bt=buyTag(x.p,valFromMetrics(draft));
  FILTERS.forEach(function(f){var d=document.getElementById("dot_"+f.id);if(d){var res=evalF(f,draft.metrics[f.id],draft.isBank);d.className="dot "+(res==="pass"?"p":res==="fail"?"f":"u");}});
  QUALITY.forEach(function(q){
   var d=document.getElementById("qdot_"+q.id);if(!d)return;
@@ -700,7 +726,7 @@ function refreshLive(){
  });
  var lm=document.getElementById("liveMeter");if(lm)lm.innerHTML=meterHTML(x.r);
  var ls=document.getElementById("liveScore");if(ls){ls.innerHTML=x.p+'<span>/'+x.max+'</span>';ls.className="score "+v.c;}
- var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,draft.valuation);la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
+ var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,valFromMetrics(draft));la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
  var vw=document.getElementById("valboxWrap");if(vw)vw.innerHTML=valboxHTML(draft);
 }
 function saveDraft(){
