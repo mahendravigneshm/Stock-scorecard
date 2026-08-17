@@ -1329,6 +1329,7 @@ function renderEditor(){
  h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 0 2px">Value = current holding value (shares × today\'s price), not what you originally invested — the sector warning needs today\'s actual exposure. Same unit for every stock; leave blank to skip.</div>';
  h+='<label class="ann" style="margin:14px 0"><input type="checkbox" class="cbx" '+(s.isBank?"checked":"")+' onchange="setBank(this.checked)"> Bank / NBFC — swaps ROCE→ROA, D/E→CAR, EBITDA→NIM; skips interest coverage &amp; OCF</label>';
  h+='<div class="editsum" id="editorSummary">'+summaryChipsHTML(s)+'</div>';
+ h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
 
  CATS.forEach(function(cat){
   h+='<div class="cat">'+cat+'</div>';
@@ -1382,7 +1383,6 @@ function renderEditor(){
   if(qcalcShown&&openCalc[q.id])h+=calcHTML(q.id,qcalc,s.metrics[q.id+"__raw"]||{});
   h+='</div>';
  });
- h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
  h+='<div class="live"><div><div id="liveMeter">'+meterHTML(x.r)+'</div><div class="'+buyTag(x.p,valFromMetrics(s)).c+'" style="margin-top:8px;font-size:13px" id="liveAction"><b>'+buyTag(x.p,valFromMetrics(s)).l+'</b> — '+action(x.p,valFromMetrics(s))+'</div></div>'
   +'<div style="text-align:right"><div class="score '+v.c+'" id="liveScore">'+x.p+'<span>/'+x.max+'</span></div></div></div>';
  h+='<button class="btn" style="width:100%" onclick="saveDraft()">Save &amp; timestamp</button>';
@@ -1493,16 +1493,15 @@ function deriveMarginTrend(){
  draft.metrics.marginTrendAuto=true;
 }
 function valboxHTML(s){
- var x=score(s);
- if(x.p<10)return"";
  var v=valFromMetrics(s);
- var col=v==="Undervalued"?"var(--em)":v==="Overvalued"?"var(--rd)":v==="Fairly Valued"?"var(--am)":"var(--dim)";
  var isBank=s.isBank;
  var anchor=isBank?"P/B":"P/E";
+ // Show the box whenever the valuation is known. If not yet filled, stay quiet
+ // (the metric rows below already prompt for the inputs) to avoid clutter at the top.
+ if(!v)return"";
+ var col=v==="Undervalued"?"var(--em)":v==="Overvalued"?"var(--rd)":v==="Fairly Valued"?"var(--am)":"var(--dim)";
  var body;
- if(!v){
-  body='<div class="sub" style="margin:0">Fill in the <b>'+anchor+'</b> valuation metric'+(isBank?"":"s")+' above to get a valuation call. Your own numbers drive this — nothing borrowed from another site.</div>';
- }else{
+ {
   var m=s.metrics||{};
   var bits=[];
   if(isBank){
