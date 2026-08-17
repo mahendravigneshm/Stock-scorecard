@@ -128,6 +128,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .capchips{display:flex;gap:6px}
   .capchip{font-size:12px;padding:5px 12px;border:1px solid var(--line);background:var(--card2);color:var(--mut);border-radius:7px;cursor:pointer}
   .capchip.on{background:var(--cyan);color:#052e33;border-color:var(--cyan);font-weight:600}
+  .capbadge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--card2);color:var(--mut)}
+  .capbadge.cap-large{background:rgba(77,163,255,.16);color:#4da3ff}
+  .capbadge.cap-mid{background:rgba(224,168,61,.16);color:#e0a83d}
+  .capbadge.cap-small{background:rgba(194,91,138,.16);color:#c25b8a}
+  .sumline{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .editsum{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
+  .sumchip{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:9px;background:var(--card2);white-space:nowrap}
+  .sumchip.em{background:rgba(63,185,107,.15);color:#3fb96b}
+  .sumchip.rd{background:rgba(229,83,60,.15);color:#e5533c}
+  .sumchip.am{background:rgba(224,168,61,.15);color:#e0a83d}
+  .sumchip.mut{background:var(--card2);color:var(--dim)}
+  .editsum .sumchip{font-size:12px;padding:4px 10px}
   .capalloc{display:flex;flex-direction:column;gap:7px;margin-top:4px}
   .capbar-row{display:flex;flex-direction:column;gap:3px}
   .capbar-top{display:flex;justify-content:space-between;font-size:12px}
@@ -233,7 +245,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 <div class="wrap" id="app"></div>
 <script>
 /* ===== framework ===== */
-var CATS=["Profitability","Growth","Financial health","Ownership","Valuation"];
+var CATS=["Valuation","Profitability","Growth","Financial health","Ownership"];
 var FILTERS=[
  {id:"roe",why:"<b>What it tracks:</b> profit generated per rupee of shareholder equity. <b>Why it matters:</b> it shows how efficiently the company turns owners' money into profit — a consistently high ROE is the hallmark of a quality business that compounds wealth. Above 15% is good; above 20% is excellent.<br><br><b>Which number to enter:</b> use the latest (most recent year) ROE — that's what Screener shows in its top ratios box. Then glance at the 5-year and 3-year ROE just below it: you want the latest to be <i>in line with or above</i> its own history, not a one-off spike.",cat:"Profitability",label:"ROE",bankLabel:"ROE",unit:"%",op:"gt",t:15,bankT:15,src:"Screener → top ratios box. Enter the latest ROE %. Check it against the '5 Yrs' and '3 Yrs' ROE shown right beside it — the latest should not be far below its own average."},
  {id:"roce",why:"<b>What it tracks:</b> return on all the capital in the business (equity plus debt), before tax. <b>Why it matters:</b> unlike ROE it can't be flattered by taking on debt, so it's a cleaner test of how well management uses total capital. Above 15% signals a genuinely productive business.<br><br><b>Which number to enter:</b> use the latest (most recent year) ROCE from Screener's top ratios box. The '5 Yrs' and '3 Yrs' ROCE shown beside it tell you if the latest is consistent — a quality business holds a high ROCE across years, not just once.",bankWhy:"<b>What it tracks:</b> Return on Assets — net profit as a % of the bank's total assets. <b>Why it matters:</b> for a bank, assets (mostly loans) are the engine, so ROA shows how profitably it deploys them. Banks run on thin margins, so the bar is lower than for ordinary businesses — above ~1% is healthy, above ~1.5% is strong. Pair it with ROE: high ROA with sensible leverage marks a well-run bank.",cat:"Profitability",label:"ROCE",bankLabel:"ROA",unit:"%",op:"gt",t:15,bankT:1,bankUnit:"%",src:"Screener → top ratios box. Enter the latest ROCE %. Compare with the '5 Yrs' / '3 Yrs' ROCE beside it — consistency matters as much as the level.",bankSrc:"P&L Net profit ÷ Balance-sheet Total assets, or the bank's investor presentation (ROA)"},
@@ -247,8 +259,8 @@ var FILTERS=[
  {id:"dii",why:"<b>What it tracks:</b> whether domestic institutions (mutual funds, insurers) increased their stake over 6 months. <b>Why it matters:</b> these are professional investors with research teams; rising DII holding is a mild vote of confidence from informed money.",cat:"Ownership",label:"DII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: DIIs, latest vs 6 months ago"},
  {id:"fii",why:"<b>What it tracks:</b> whether foreign institutional investors raised their stake over 6 months. <b>Why it matters:</b> FII flows are a similar informed-money signal, though they can be more momentum-driven and volatile than domestic flows.",cat:"Ownership",label:"FII 6-mo change +",type:"bool",verify:true,src:"Screener → Shareholding → Quarterly: FIIs, latest vs 6 months ago"},
  {id:"pledge",why:"<b>What it tracks:</b> the % of promoter shares pledged as loan collateral. <b>Why it matters:</b> pledging means promoters have borrowed against their stake — if the price falls, forced selling can crash the stock. Under 10% is tolerable; ideally zero.",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"},
- {id:"peVsHist",why:"<b>What it tracks:</b> today's P/E versus the stock's own 5-year median P/E. <b>Why it matters:</b> a great company can still be a poor investment if you overpay. Buying below its own historical average means you're getting it cheaper than the market usually prices it.",cat:"Valuation",label:"P/E vs its own history",unit:"%",op:"lt",t:0,src:"Tap ƒ, enter current P/E and the 3-yr & 5-yr median P/E (from the Screener P/E chart), then choose which median to judge against. 3-yr is fairer when the stock re-rated years ago."},
- {id:"peVsSector",why:"<b>What it tracks:</b> the stock's P/E versus its industry's P/E. <b>Why it matters:</b> it shows whether you're paying a premium or discount versus direct peers. A quality leader may deserve a premium, but a large unexplained one is a caution.",cat:"Valuation",label:"P/E vs sector median",unit:"%",op:"lt",t:0,bankSkip:false,src:"Tap ƒ and enter the stock's P/E + Industry P/E — both in Screener's top ratios box. The app computes how far above or below the sector it trades."},
+ {id:"peVsHist",why:"<b>What it tracks:</b> today's P/E versus the stock's own 5-year median P/E. <b>Why it matters:</b> a great company can still be a poor investment if you overpay. Buying below its own historical average means you're getting it cheaper than the market usually prices it.",cat:"Valuation",label:"P/E vs its own history",unit:"%",op:"lt",t:0,bankSkip:true,bankHide:true,src:"Tap ƒ, enter current P/E and the 3-yr & 5-yr median P/E (from the Screener P/E chart), then choose which median to judge against. 3-yr is fairer when the stock re-rated years ago."},
+ {id:"peVsSector",why:"<b>What it tracks:</b> the stock's P/E versus its industry's P/E. <b>Why it matters:</b> it shows whether you're paying a premium or discount versus direct peers. A quality leader may deserve a premium, but a large unexplained one is a caution.",cat:"Valuation",label:"P/E vs sector median",unit:"%",op:"lt",t:0,bankSkip:true,bankHide:true,src:"Tap ƒ and enter the stock's P/E + Industry P/E — both in Screener's top ratios box. The app computes how far above or below the sector it trades."},
  {id:"pbVsHist",why:"<b>What it tracks:</b> the bank's current P/B versus its own 3- or 5-year median P/B. <b>Why it matters:</b> for a bank, book value is the right anchor — but current P/B alone is a weak signal (a low P/B can mean the market fears the loan book, not that it's cheap). Comparing to its own history tells you whether it trades cheap or dear <i>relative to how the market normally prices it</i>. Always read alongside ROE — a bank deserves a higher P/B when it earns higher returns on equity.",cat:"Valuation",label:"P/B vs its own history",unit:"%",op:"lt",t:0,onlyBank:true,src:"Tap ƒ and enter current P/B and its 3-yr & 5-yr median P/B (Screener P/B chart). The app computes how far above/below its own norm it trades. Negative = cheaper than its history."},
 
 ];
@@ -349,6 +361,58 @@ function evalQ(q,val,bank){
  return val===q.good?"good":val===q.warn?"warn":"concern";
 }
 function qConcerns(s){return QUALITY.filter(function(q){return evalQ(q,s.metrics[q.id],s.isBank)==="concern";}).length;}
+/* A compact plain-language read of where a stock stands — used on the dashboard rows
+   and at the top of the editor. Counts filter passes and quality concerns, and names
+   the valuation, so you get the gist without opening the full breakdown. */
+/* A compact plain-language read of a stock's standout metrics — used on the dashboard
+   rows and at the top of the editor. Instead of a bare pass-count, it names the actual
+   figures that matter ("ROE 22%", "P/E below history", "Sales growth 18%"), colouring
+   each green/amber/red by whether it clears its threshold. Shows the strongest passes
+   first, then any clear concerns, so you get the gist without opening the breakdown. */
+function fmtMetricPhrase(f,val,bank,res){
+ var label=(bank&&f.bankLabel)?f.bankLabel:f.label;
+ var unit=(bank&&f.bankUnit)?f.bankUnit:f.unit;
+ var n=+val;
+ // %-vs-benchmark metrics (peVsHist / peVsSector / pbVsHist) read better as words than a signed %
+ if(f.id==="peVsHist")return "P/E "+(n<0?"below":"above")+" history"+(n<0?" ("+Math.abs(Math.round(n))+"% cheaper)":"");
+ if(f.id==="peVsSector")return "P/E "+(n<0?"below":"above")+" sector";
+ if(f.id==="pbVsHist")return "P/B "+(n<0?"below":"above")+" history"+(n<0?" ("+Math.abs(Math.round(n))+"% cheaper)":"");
+ // normal numeric metric — show label + value + unit
+ var v=(Math.round(n*10)/10);
+ return label+" "+v+unit;
+}
+function metricSummary(s){
+ var bank=s.isBank, out=[];
+ // Rank filters we most want to surface first (the classic quality/valuation headline metrics)
+ var priority=["roe","roce","peVsHist","pbVsHist","peVsSector","salesG","profitG","epsG","de"];
+ var seen={};
+ function pushFilter(f){
+  if(seen[f.id])return; 
+  if((bank&&f.bankSkip)||(f.onlyBank&&!bank)||(bank&&f.bankHide))return;
+  if(f.type==="bool")return;                       // skip yes/no filters in the headline
+  var val=s.metrics[f.id];
+  if(val===""||val==null||isNaN(+val))return;      // only filled numeric metrics
+  var res=evalF(f,val,bank);
+  if(res==="unknown"||res==="skip")return;
+  seen[f.id]=1;
+  out.push({t:fmtMetricPhrase(f,val,bank,res),c:res==="pass"?"em":"rd",pass:res==="pass"});
+ }
+ // priority metrics first
+ priority.forEach(function(id){var f=FILTERS.filter(function(x){return x.id===id;})[0];if(f)pushFilter(f);});
+ // then any other filled metric, up to a sensible cap
+ FILTERS.forEach(function(f){if(out.length<6)pushFilter(f);});
+ // sort passes first so the positives lead
+ out.sort(function(a,b){return (b.pass?1:0)-(a.pass?1:0);});
+ var chips=out.slice(0,5);
+ // valuation verdict as a trailing chip if we have it
+ var val=valFromMetrics(s);
+ if(val)chips.push({t:val,c:val==="Undervalued"?"em":val==="Overvalued"?"rd":"am"});
+ if(!chips.length)chips.push({t:"No metrics filled yet",c:"mut"});
+ return chips;
+}
+function summaryChipsHTML(s){
+ return metricSummary(s).map(function(p){return '<span class="sumchip '+p.c+'">'+esc(p.t)+'</span>';}).join("");
+}
 function evalF(f,val,bank){
  if(bank&&f.bankSkip)return"skip";
  if(f.onlyBank&&!bank)return"skip";
@@ -387,10 +451,9 @@ function valFromMetrics(s){
  var m=s.metrics||{};
  var parts=[];
  if(s.isBank){
-  // Banks are valued off book value — use P/B vs its own history as the valuation anchor.
+  // Banks are valued off book value alone — P/B vs its own history. P/E is not a
+  // reliable anchor for banks (earnings swing with provisioning), so it's excluded.
   if(m.pbVsHist!==""&&m.pbVsHist!=null&&!isNaN(+m.pbVsHist))parts.push(+m.pbVsHist);
-  // P/E vs sector can still add a little colour if entered, but P/B leads.
-  if(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))parts.push(+m.peVsSector);
  }else{
   if(m.peVsHist!==""&&m.peVsHist!=null&&!isNaN(+m.peVsHist))parts.push(+m.peVsHist);
   if(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))parts.push(+m.peVsSector);
@@ -725,8 +788,9 @@ function trowHTML(s,x){
  var revCls=(d===null||d>90)?"rd":"";
  var flags=qConcerns(s);
  return '<div class="trow" onclick="editStock(\''+s.id+'\')">'
-  +'<div class="tn"><div class="tname">'+esc(s.name||s.ticker)+(flags>0?' <span style="color:var(--rd)">⚠</span>':'')+'</div>'
-  +'<div class="tsec">'+esc(s.sector||"")+(s.isBank?" · Bank":"")+'</div></div>'
+  +'<div class="tn"><div class="tname">'+esc(s.name||s.ticker)+(flags>0?' <span style="color:var(--rd)" title="'+flags+' quality concern'+(flags>1?"s":"")+'">⚠</span>':'')+'</div>'
+  +'<div class="tsec">'+esc(s.sector||"")+(s.isBank?" · Bank":"")+(s.cap?" · "+s.cap+" cap":"")+'</div>'
+  +'<div class="sumline">'+summaryChipsHTML(s)+'</div></div>'
   +'<span class="tcol-score"><span class="tscore '+v.c+'">'+x.p+'</span></span>'
   +'<span class="tcol-tag"><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></span>'
   +'<span class="tcol-rev"><span class="trev '+revCls+'">'+rev+'</span></span>'
@@ -1041,7 +1105,26 @@ function renderPortfolio(){
  });
  h+='</div>';
 
- // Import + refresh
+ // Cap-wise allocation (stocks only — cap comes from the linked scorecard entry)
+ (function(){
+  var caps={Large:0,Mid:0,Small:0,Unknown:0},tot=0;
+  active.filter(function(x){return x.cls==="Stock";}).forEach(function(x){
+   var cv=curVal(x),val=cv!=null?cv:x.invested;
+   var st=stocks.filter(function(s){return (s.ticker||"").toUpperCase()===(x.symbol||"").toUpperCase();})[0];
+   var c=(st&&st.cap)?st.cap:"Unknown";
+   caps[c]+=val; tot+=val;
+  });
+  if(tot<=0)return;
+  h+='<div class="card" style="margin:0"><div style="font-size:13px;font-weight:600;margin-bottom:8px">Market-cap allocation <span class="sub" style="font-weight:400">· stocks only</span></div>';
+  [["Large","#4da3ff"],["Mid","#e0a83d"],["Small","#c25b8a"],["Unknown","#6b7280"]].forEach(function(c){
+   if(caps[c[0]]<=0)return;
+   var pc=caps[c[0]]/tot*100;
+   h+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>'+(c[0]==="Unknown"?"Not tagged":c[0]+" cap")+'</span><span class="sub">'+Math.round(pc)+'% · ₹'+fmtI(caps[c[0]])+'</span></div>'
+    +'<div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pc+'%;background:'+c[1]+'"></div></div></div>';
+  });
+  if(caps.Unknown>0)h+='<div style="font-size:11px;color:var(--dim);margin-top:6px">Cap comes from each stock\'s scorecard entry. Tag a stock\'s cap in its editor to move it out of "Not tagged".</div>';
+  h+='</div>';
+ })();
  h+='<button class="btn-o" onclick="document.getElementById(\'tradeFile\').click()">Import more trades</button>'
    +'<input type="file" id="tradeFile" accept=".csv,.xlsx,.xls" multiple style="display:none" onchange="importTradeFiles(this)">';
  h+='<div style="font-size:11px;color:var(--dim)">Holdings, cost basis and last price come from your broker statement — accurate to the day you exported it, corporate actions included. Re-import a fresh statement to update prices, or type an LTP to override any holding. Everything syncs to Drive.</div>';
@@ -1113,12 +1196,12 @@ function renderCompare(){
  var sectors=[];stocks.forEach(function(s){if(s.sector&&sectors.indexOf(s.sector)<0)sectors.push(s.sector);});
  sectors.sort();
  var picker='<div class="card picker" style="margin:0"><div style="font-size:12px;font-weight:600;color:var(--mut);margin-bottom:8px">Select stocks ('+compareSel.length+')</div>';
- picker+='<div style="margin-bottom:8px"><select onchange="cmpSector=this.value;renderCompare()" style="width:100%;margin-bottom:6px"><option value="">All sectors</option>'
+ picker+='<div style="margin-bottom:8px"><select onchange="selectSector(this.value)" style="width:100%;margin-bottom:6px"><option value="">Filter by sector…</option>'
   +sectors.map(function(sec){return '<option value="'+esc(sec)+'"'+(cmpSector===sec?" selected":"")+'>'+esc(sec)+'</option>';}).join("")+'</select>';
- picker+='<div class="chbtns" style="flex-wrap:wrap"><button class="chbtn '+(!cmpCap?"on":"")+'" onclick="cmpCap=\'\';renderCompare()">All caps</button>'
-  +["Large","Mid","Small"].map(function(c){return '<button class="chbtn '+(cmpCap===c?"on":"")+'" onclick="cmpCap=\''+c+'\';renderCompare()">'+c+'</button>';}).join("")+'</div></div>';
+ if(cmpSector)picker+='<div style="font-size:11px;color:var(--dim);margin-bottom:6px">Selected all '+esc(cmpSector)+' stocks. <span style="color:var(--cyan);cursor:pointer" onclick="clearCompareSel()">Clear</span></div>';
+ picker+='</div>';
  stocks.slice()
-  .filter(function(s){return (!cmpSector||s.sector===cmpSector)&&(!cmpCap||s.cap===cmpCap);})
+  .filter(function(s){return (!cmpSector||s.sector===cmpSector);})
   .sort(function(a,b){return(a.name||a.ticker||"").localeCompare(b.name||b.ticker||"");}).forEach(function(s){
   var x=score(s),checked=compareSel.indexOf(s.id)>-1;
   picker+='<div class="cksel" onclick="toggleCompare(\''+s.id+'\')">'
@@ -1145,6 +1228,13 @@ function toggleCompare(id){
  if(i>-1)compareSel.splice(i,1);else compareSel.push(id);
  renderCompare();
 }
+function selectSector(sec){
+ cmpSector=sec;
+ // Auto-select every stock in the chosen sector (replacing the current selection).
+ if(sec){compareSel=stocks.filter(function(s){return s.sector===sec;}).map(function(s){return s.id;});}
+ renderCompare();
+}
+function clearCompareSel(){cmpSector="";compareSel=[];renderCompare();}
 function compareTableHTML(sel){
  var h='<div class="cmpwrap"><table class="cmptable"><thead><tr><th class="lbl"></th>';
  sel.forEach(function(s){h+='<th>'+esc(s.name||s.ticker)+(s.ticker?'<br><span style="font-weight:400;color:var(--dim)">'+esc(s.ticker)+'</span>':'')+'</th>';});
@@ -1153,9 +1243,12 @@ function compareTableHTML(sel){
  h+='<tr><td class="lbl">Score</td>'+sel.map(function(s){var x=score(s),v=verd(x.p,x.max);return'<td><span class="cmpv '+v.c+'" style="font-weight:700">'+x.p+'/'+x.max+'</span></td>';}).join('')+'</tr>';
  h+='<tr><td class="lbl">Verdict</td>'+sel.map(function(s){var v=verd(score(s).p);return'<td><span class="'+v.c+'" style="font-weight:600">'+v.l+'</span></td>';}).join('')+'</tr>';
  h+='<tr><td class="lbl">Buy call</td>'+sel.map(function(s){var x=score(s),bt=buyTag(x.p,valFromMetrics(s));return'<td><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Sector</td>'+sel.map(function(s){return'<td style="font-size:12px;color:var(--mut)">'+(s.sector?esc(s.sector):"—")+'</td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Market cap</td>'+sel.map(function(s){return'<td><span class="capbadge cap-'+(s.cap||"none").toLowerCase()+'">'+(s.cap||"—")+'</span></td>';}).join('')+'</tr>';
 
  var lastCat=null;
  FILTERS.forEach(function(f){
+  if(f.bankHide&&sel.every(function(s){return s.isBank;}))return; // all banks → hide inapplicable metric
   if(f.cat!==lastCat){h+='<tr class="cat"><td colspan="'+(sel.length+1)+'">'+esc(f.cat)+'</td></tr>';lastCat=f.cat;}
   h+='<tr><td class="lbl">'+filterRowLabel(f,sel)+'</td>'+sel.map(function(s){return cmpFilterCellHTML(f,s);}).join('')+'</tr>';
  });
@@ -1233,15 +1326,14 @@ function renderEditor(){
  h+='<div class="caprow"><span class="caplbl">Market cap</span><div class="capchips">'
   +["Large","Mid","Small"].map(function(c){return '<button class="capchip '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
   +'</div></div>';
- h+='<div class="choicerow" style="margin-top:8px"><span class="chlbl">Market cap</span><div class="chbtns">'
-  +["Large","Mid","Small"].map(function(c){return '<button class="chbtn '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
-  +'</div></div>';
  h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 0 2px">Value = current holding value (shares × today\'s price), not what you originally invested — the sector warning needs today\'s actual exposure. Same unit for every stock; leave blank to skip.</div>';
  h+='<label class="ann" style="margin:14px 0"><input type="checkbox" class="cbx" '+(s.isBank?"checked":"")+' onchange="setBank(this.checked)"> Bank / NBFC — swaps ROCE→ROA, D/E→CAR, EBITDA→NIM; skips interest coverage &amp; OCF</label>';
+ h+='<div class="editsum" id="editorSummary">'+summaryChipsHTML(s)+'</div>';
 
  CATS.forEach(function(cat){
   h+='<div class="cat">'+cat+'</div>';
   FILTERS.filter(function(f){return f.cat===cat;}).forEach(function(f){
+   if(s.isBank&&f.bankHide)return;         // metric not applicable to banks — hide entirely
    var skip=(s.isBank&&f.bankSkip)||(f.onlyBank&&!s.isBank);
    var label=s.isBank&&f.bankLabel?f.bankLabel:f.label;
    var unit=s.isBank&&f.bankUnit?f.bankUnit:f.unit;
@@ -1306,9 +1398,9 @@ function calcHTML(id,calc,raw){
  var h='<div class="calc"><p class="note">'+calc.note+'</p>';
  if(calc.choice){
   var cur=raw[calc.choice.k]||calc.choice.def;
-  h+='<div class="choicerow"><span class="chlbl">'+calc.choice.label+'</span><div class="chbtns">';
+  h+='<div class="choicerow"><span class="chlbl">'+calc.choice.label+'</span><div class="chbtns" id="chbtns_'+id+'">';
   calc.choice.opts.forEach(function(o){
-   h+='<button class="chbtn '+(cur===o.v?"on":"")+'" onclick="setRaw(\''+id+'\',\''+calc.choice.k+'\',\''+o.v+'\')">'+o.label+'</button>';
+   h+='<button class="chbtn '+(cur===o.v?"on":"")+'" data-v="'+o.v+'" onclick="setChoice(\''+id+'\',\''+calc.choice.k+'\',\''+o.v+'\')">'+o.label+'</button>';
   });
   h+='</div></div>';
  }
@@ -1324,7 +1416,6 @@ function calcHTML(id,calc,raw){
 
 /* ===== editor events (targeted updates, no focus loss) ===== */
 function setF(k,val){draft[k]=val;}
-function setCap(c){draft.cap=(draft.cap===c?"":c);renderEditor();}
 function setCap(c){draft.cap=(draft.cap===c?"":c);renderEditor();}
 function setQ(id,val){
  draft.metrics[id]=val;
@@ -1375,6 +1466,13 @@ function setRaw(id,k,val){
  // Auto-derive Operating margin trend from the 5 OPM years entered in the margin calculator (non-bank).
  if(id==="margin"&&!draft.isBank)deriveMarginTrend();
  refreshLive();
+}
+/* Choice buttons (3yr/5yr median) update their own highlight instantly, in place,
+   instead of waiting for a full editor re-render — fixes the click-feels-laggy issue. */
+function setChoice(id,k,val){
+ var wrap=document.getElementById("chbtns_"+id);
+ if(wrap){var btns=wrap.querySelectorAll(".chbtn");for(var i=0;i<btns.length;i++){btns[i].className="chbtn"+(btns[i].getAttribute("data-v")===val?" on":"");}}
+ setRaw(id,k,val);
 }
 /* Reads y1..y5 (oldest→latest) from the OPM calculator and decides Expanding / Stable / Contracting
    by comparing the recent average to the earlier average — a slope, not just first-vs-last, so one
@@ -1432,6 +1530,7 @@ function refreshLive(){
  var ls=document.getElementById("liveScore");if(ls){ls.innerHTML=x.p+'<span>/'+x.max+'</span>';ls.className="score "+v.c;}
  var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,valFromMetrics(draft));la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
  var vw=document.getElementById("valboxWrap");if(vw)vw.innerHTML=valboxHTML(draft);
+ var es=document.getElementById("editorSummary");if(es)es.innerHTML=summaryChipsHTML(draft);
 }
 function saveDraft(){
  if(!draft.name&&!draft.ticker){alert("Add a name or ticker first.");return;}
