@@ -9,6 +9,7 @@
 <title>Stock Scorecard</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230b2a4a%22/%3E%3Cpolyline%20points%3D%2212%2C44%2026%2C32%2036%2C40%2052%2C20%22%20fill%3D%22none%22%20stroke%3D%22%232fd4c6%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpolyline%20points%3D%2242%2C20%2052%2C20%2052%2C30%22%20fill%3D%22none%22%20stroke%3D%22%232fd4c6%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="Equity quality &amp; valuation scorecard with Google Drive sync.">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -120,6 +121,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .chlbl{font-size:12px;color:var(--mut)}
   .chbtns{display:flex;gap:6px}
   .chbtn{font-size:12px;padding:5px 12px;border:1px solid var(--line);background:var(--card2);color:var(--mut);border-radius:7px;cursor:pointer}
+  .brandmark{display:inline-flex;align-items:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+  .brandmark svg{border-radius:7px;display:block}
+  .caprow{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .caplbl{font-size:12px;color:var(--mut);min-width:74px}
+  .capchips{display:flex;gap:6px}
+  .capchip{font-size:12px;padding:5px 12px;border:1px solid var(--line);background:var(--card2);color:var(--mut);border-radius:7px;cursor:pointer}
+  .capchip.on{background:var(--cyan);color:#052e33;border-color:var(--cyan);font-weight:600}
+  .capalloc{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+  .capbar-row{display:flex;flex-direction:column;gap:3px}
+  .capbar-top{display:flex;justify-content:space-between;font-size:12px}
+  .capbar{height:7px;border-radius:4px;background:var(--line);overflow:hidden}
+  .capbar>span{display:block;height:100%}
   .chbtn.on{background:var(--cyan);color:#052e33;border-color:var(--cyan);font-weight:600}
   .pgrouphdr{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin:16px 0 8px}
   .ptable{display:flex;flex-direction:column;gap:1px;background:var(--line);border-radius:10px;overflow:hidden}
@@ -127,6 +140,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .pmain{min-width:0;flex:1}
   .pnm{font-size:14px;font-weight:600}
   .plink{font-size:11px;color:var(--cyan);cursor:pointer;font-weight:500;margin-left:6px}
+  .pedit{font-size:12px;color:var(--dim);cursor:pointer;margin-left:6px}
+  .pedit:hover{color:var(--txt)}
+  .holdedit{margin-top:8px;padding:10px;background:var(--card2);border:1px solid var(--line);border-radius:8px}
+  .herow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--line)}
+  .herow:first-child{border-top:none}
+  .herow label{font-size:12px;color:var(--mut)}
+  .herow input{width:110px;text-align:right;font-family:ui-monospace,monospace;padding:5px 8px;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--txt)}
   .psub{font-size:11.5px;color:var(--dim);margin-top:2px}
   .pprice{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
   input.ltp{width:92px;text-align:right;font-family:ui-monospace,monospace;padding:5px 8px;font-size:13px;background:var(--card2);border:1px solid var(--line);border-radius:6px;color:var(--txt)}
@@ -229,7 +249,7 @@ var FILTERS=[
  {id:"pledge",why:"<b>What it tracks:</b> the % of promoter shares pledged as loan collateral. <b>Why it matters:</b> pledging means promoters have borrowed against their stake — if the price falls, forced selling can crash the stock. Under 10% is tolerable; ideally zero.",cat:"Ownership",label:"Promoter pledge",unit:"%",op:"lt",t:10,src:"Screener → Shareholding → expand Promoters / 'Pledged %' (no line = 0%)"},
  {id:"peVsHist",why:"<b>What it tracks:</b> today's P/E versus the stock's own 5-year median P/E. <b>Why it matters:</b> a great company can still be a poor investment if you overpay. Buying below its own historical average means you're getting it cheaper than the market usually prices it.",cat:"Valuation",label:"P/E vs its own history",unit:"%",op:"lt",t:0,src:"Tap ƒ, enter current P/E and the 3-yr & 5-yr median P/E (from the Screener P/E chart), then choose which median to judge against. 3-yr is fairer when the stock re-rated years ago."},
  {id:"peVsSector",why:"<b>What it tracks:</b> the stock's P/E versus its industry's P/E. <b>Why it matters:</b> it shows whether you're paying a premium or discount versus direct peers. A quality leader may deserve a premium, but a large unexplained one is a caution.",cat:"Valuation",label:"P/E vs sector median",unit:"%",op:"lt",t:0,bankSkip:false,src:"Tap ƒ and enter the stock's P/E + Industry P/E — both in Screener's top ratios box. The app computes how far above or below the sector it trades."},
- {id:"pb",why:"<b>What it tracks:</b> price relative to book value — the key valuation gauge for banks and financials. <b>Why it matters:</b> banks are valued off their equity base, not earnings multiples. A quality bank with high ROE can justify a higher P/B, but paying far above ~3x needs a strong reason.",cat:"Valuation",label:"P/B (banks & financials)",unit:"",op:"lt",t:3,onlyBank:true,src:"Screener → top ratios box (Price to Book). For a quality bank, under ~3 is reasonable; pair it with high ROE. Non-banks can skip this."},
+ {id:"pbVsHist",why:"<b>What it tracks:</b> the bank's current P/B versus its own 3- or 5-year median P/B. <b>Why it matters:</b> for a bank, book value is the right anchor — but current P/B alone is a weak signal (a low P/B can mean the market fears the loan book, not that it's cheap). Comparing to its own history tells you whether it trades cheap or dear <i>relative to how the market normally prices it</i>. Always read alongside ROE — a bank deserves a higher P/B when it earns higher returns on equity.",cat:"Valuation",label:"P/B vs its own history",unit:"%",op:"lt",t:0,onlyBank:true,src:"Tap ƒ and enter current P/B and its 3-yr & 5-yr median P/B (Screener P/B chart). The app computes how far above/below its own norm it trades. Negative = cheaper than its history."},
 
 ];
 function cagr(n){return{note:"CAGR = (latest ÷ oldest)^(1÷years) − 1. Both figures from Screener's P&L. True CAGR is mathematically undefined when going from a loss to a profit (or profit to loss) — no real percentage describes that. A turnaround like that shows as 999% (very strong) or −999% (very weak) instead, the same convention Screener itself uses for undefined ratios — not a literal precise number, just an unambiguous signal either way.",
@@ -284,8 +304,17 @@ var CALCS={
    var cur=+r.cur,m=+med; if(!m)return null;
    return (cur-m)/m*100;
   }},
- peVsSector:{note:"Type the stock's current P/E and its industry's P/E — both shown in Screener's top ratios box ('Stock P/E' and 'Industry PE'). The app works out how far it sits above or below its peers. Negative = cheaper than the sector (passes).",
-  fields:[{k:"cur",label:"Stock P/E"},{k:"ind",label:"Industry P/E"}],
+ pbVsHist:{note:"Enter the bank's current P/B and its 3- and 5-year median P/B (from the Screener P/B chart). Pick which benchmark to judge against — 3-yr is fairer if the bank re-rated. Negative = cheaper than its own history (passes).",
+  choice:{k:"period",label:"Compare against",opts:[{v:"3",label:"3-yr median"},{v:"5",label:"5-yr median"}],def:"3"},
+  fields:[{k:"cur",label:"Current P/B"},{k:"med3",label:"3-yr median P/B"},{k:"med5",label:"5-yr median P/B"}],
+  compute:function(r){
+   var per=r.period||"3";var med=per==="5"?r.med5:r.med3;
+   if(r.cur===""||r.cur==null||med===""||med==null)return null;
+   var cur=+r.cur,m=+med; if(!m)return null;
+   return (cur-m)/m*100;
+  }},
+ peVsSector:{note:"Current P/E is carried over from the 'vs history' calculator above — you only enter the Industry P/E here (Screener's top ratios box, 'Industry PE'). Negative = cheaper than the sector (passes).",
+  fields:[{k:"cur",label:"Stock P/E (auto from above)"},{k:"ind",label:"Industry P/E"}],
   compute:function(r){
    if(r.cur===""||r.cur==null||r.ind===""||r.ind==null)return null;
    var cur=+r.cur,ind=+r.ind; if(!ind)return null;
@@ -357,9 +386,16 @@ function normalizeVal(v){
 function valFromMetrics(s){
  var m=s.metrics||{};
  var parts=[];
- if(m.peVsHist!==""&&m.peVsHist!=null&&!isNaN(+m.peVsHist))parts.push(+m.peVsHist);
- if(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))parts.push(+m.peVsSector);
- if(!parts.length)return"";               // no P/E data yet → unknown
+ if(s.isBank){
+  // Banks are valued off book value — use P/B vs its own history as the valuation anchor.
+  if(m.pbVsHist!==""&&m.pbVsHist!=null&&!isNaN(+m.pbVsHist))parts.push(+m.pbVsHist);
+  // P/E vs sector can still add a little colour if entered, but P/B leads.
+  if(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))parts.push(+m.peVsSector);
+ }else{
+  if(m.peVsHist!==""&&m.peVsHist!=null&&!isNaN(+m.peVsHist))parts.push(+m.peVsHist);
+  if(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))parts.push(+m.peVsSector);
+ }
+ if(!parts.length)return"";               // no valuation data yet → unknown
  var avg=parts.reduce(function(a,b){return a+b;},0)/parts.length;
  // ≤ −10% cheaper = Undervalued · within ±10% = Fairly Valued · ≥ +10% pricier = Overvalued
  if(avg<=-10)return"Undervalued";
@@ -368,7 +404,7 @@ function valFromMetrics(s){
 }
 function action(p,v){v=normalizeVal(v);if(p<7)return"Exit in a planned way, over 2-3 sessions";
  if(p<10)return"Watch for 1 quarter — exit if it doesn't improve";
- if(!v)return"Strong — fill the two P/E metrics to get a buy/hold call";
+ if(!v)return"Strong — fill the valuation metric to get a buy/hold call";
  if(v==="Undervalued")return"Add more, systematically";
  if(v==="Fairly Valued")return"Hold, accumulate on dips";
  return"Hold — do not add. Wait for price to return to fair";}
@@ -573,7 +609,7 @@ var HKEY="stockScorecard:holdings";
 var holdings=loadHoldings();
 function loadHoldings(){try{return JSON.parse(localStorage.getItem(HKEY))||[];}catch(e){return[];}}
 function persistHoldings(){try{localStorage.setItem(HKEY,JSON.stringify(holdings));}catch(e){}}
-var view="dash",compareSel=[],syncPrompt=null,openInfo={};
+var view="dash",compareSel=[],syncPrompt=null,openInfo={},cmpSector="",cmpCap="";
 var driveState=Object.assign({token:null},loadDriveMeta());
 function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return SEED();}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));localStorage.setItem(KEY+":ts",String(Date.now()));}catch(e){}}
@@ -610,7 +646,7 @@ function renderDash(){
  var exit=sc.filter(function(o){return o.x.p<7;}).length;
  var due=stocks.filter(function(s){var d=daysSince(s.lastUpdated);return d===null||d>90;}).length;
  var h='';
- h+='<div class="between"><div><h1>Scorecard</h1><div class="sub">'+stocks.length+' holdings · '+due+' to review</div></div>'
+ h+='<div class="between"><div style="display:flex;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:9px"><span class="brandmark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="26" height="26"><rect width="64" height="64" rx="14" fill="#0b2a4a"/><polyline points="12,44 26,32 36,40 52,20" fill="none" stroke="#2fd4c6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="42,20 52,20 52,30" fill="none" stroke="#2fd4c6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h1 style="margin:0">Scorecard</h1></div></div><div class="sub" style="margin-left:36px">'+stocks.length+' holdings · '+due+' to review</div></div>'
    +'<button class="btn" onclick="addStock()">+ Add</button></div>';
  h+=tabbarHTML();
 
@@ -649,6 +685,25 @@ function renderDash(){
   if(!sa.anyW)right+='<div style="font-size:11px;color:var(--dim);margin-top:6px">By stock count. Add a Value to each holding for value-based allocation.</div>';
   right+='</div>';
  }
+ // Cap-wise allocation
+ (function(){
+  var caps={Large:0,Mid:0,Small:0,Unset:0},anyW=false,tot=0;
+  sc.forEach(function(o){
+   var s=o.s, w=(s.weight!=null&&s.weight!=="")?+s.weight:null; if(w)anyW=true;
+   var v=w||1, c=s.cap||"Unset"; caps[c]+=v; tot+=v;
+  });
+  if(tot>0){
+   right+='<div class="card" style="margin:0"><div style="font-size:13px;font-weight:600;margin-bottom:8px">Market-cap allocation</div>';
+   [["Large","#4da3ff"],["Mid","#e0a83d"],["Small","#c25b8a"],["Unset","#6b7280"]].forEach(function(c){
+    if(caps[c[0]]<=0)return;
+    var pc=caps[c[0]]/tot*100;
+    right+='<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>'+(c[0]==="Unset"?"Not set":c[0]+" cap")+'</span><span style="color:var(--dim)">'+Math.round(pc)+'%</span></div>'
+     +'<div style="height:6px;background:var(--line);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pc+'%;background:'+c[1]+'"></div></div></div>';
+   });
+   if(!anyW)right+='<div style="font-size:11px;color:var(--dim);margin-top:6px">By stock count. Add a Value to each holding for value-based allocation. Set each stock\'s cap in its editor.</div>';
+   right+='</div>';
+  }
+ })();
  right+='<div class="live" style="margin:0"><div><div style="font-size:13px;font-weight:600">Google Drive</div><div class="sub" id="driveStatus" style="margin-top:2px">'+driveStatusText()+'</div></div>'
    +'<button class="btn-o" onclick="'+(driveState.token?"syncNow()":"connectDrive()")+'">'+(driveState.token?"Sync now":"Connect &amp; sync")+'</button></div>';
  right+='<div class="row">'
@@ -950,8 +1005,9 @@ function renderPortfolio(){
    var linked=cls==="Stock"?stocks.filter(function(s){return (s.ticker||"").toUpperCase()===x.symbol.toUpperCase();})[0]:null;
    h+='<div class="prow">'
     +'<div class="pmain">'
-      +'<div class="pnm">'+esc(x.symbol)+(linked?' <span class="plink" onclick="editStock(\''+linked.id+'\')">◷ score '+score(linked).p+'/'+score(linked).max+'</span>':'')+'</div>'
+      +'<div class="pnm">'+esc(x.symbol)+(linked?' <span class="plink" onclick="editStock(\''+linked.id+'\')">◷ score '+score(linked).p+'/'+score(linked).max+'</span>':'')+' <span class="pedit" onclick="editHolding(\''+(x.isin||x.symbol)+'\')" title="Edit quantity / cost / price">✎</span></div>'
       +'<div class="psub">'+fmtI(x.qty*1)+' × avg ₹'+x.avg.toFixed(2)+' · invested ₹'+fmtI(x.invested)+'</div>'
+      +(peditKey===(x.isin||x.symbol)?holdingEditHTML(x):'')
     +'</div>'
     +'<div class="pprice">'
       +'<input class="ltp" type="number" step="any" placeholder="'+(x.close!==""&&x.close!=null?(+x.close).toFixed(1):"LTP")+'" value="'+(x.ltp!=null&&x.ltp!==""?x.ltp:"")+'" oninput="setLtp(\''+(x.isin||x.symbol)+'\',this.value)" title="Statement price shown; type to override">'
@@ -1003,6 +1059,36 @@ function setLtp(key,val){
  window._ltpT=setTimeout(function(){renderPortfolio();if(driveState.token)pushHoldings();},600);
 }
 
+var peditKey=null;
+function editHolding(key){peditKey=(peditKey===key?null:key);renderPortfolio();}
+function holdingEditHTML(x){
+ var k=x.isin||x.symbol;
+ return '<div class="holdedit" onclick="event.stopPropagation()">'
+  +'<div class="herow"><label>Quantity</label><input type="number" step="any" value="'+x.qty+'" oninput="setHold(\''+k+'\',\'qty\',this.value)"></div>'
+  +'<div class="herow"><label>Average buy price</label><input type="number" step="any" value="'+x.avg+'" oninput="setHold(\''+k+'\',\'avg\',this.value)"></div>'
+  +'<div class="herow"><label>Current price (LTP)</label><input type="number" step="any" value="'+(x.ltp!=null&&x.ltp!==""?x.ltp:(x.close!=null&&x.close!==""?x.close:""))+'" oninput="setHold(\''+k+'\',\'ltp\',this.value)"></div>'
+  +'<div class="herow" style="justify-content:flex-end;gap:8px;border:none">'
+   +'<button class="chbtn" onclick="removeHolding(\''+k+'\')" style="color:var(--rd)">Remove</button>'
+   +'<button class="chbtn on" onclick="peditKey=null;renderPortfolio()">Done</button></div>'
+  +'</div>';
+}
+function setHold(key,field,val){
+ var hh=holdings.filter(function(x){return (x.isin||x.symbol)===key;})[0];
+ if(!hh)return;
+ if(field==="qty"){hh.qty=+val||0;hh.invested=hh.qty*(+hh.avg||0);}
+ else if(field==="avg"){hh.avg=+val||0;hh.invested=hh.qty*hh.avg;}
+ else if(field==="ltp"){hh.ltp=val;}
+ persistHoldings();
+ clearTimeout(window._heT);
+ window._heT=setTimeout(function(){renderPortfolio();if(driveState.token)pushHoldings();},700);
+}
+function removeHolding(key){
+ if(!confirm("Remove this holding from your portfolio?"))return;
+ holdings=holdings.filter(function(x){return (x.isin||x.symbol)!==key;});
+ peditKey=null;persistHoldings();renderPortfolio();
+ if(driveState.token)pushHoldings();
+}
+
 function importTradeFiles(input){
  var files=input.files; if(!files||!files.length)return;
  for(var i=0;i<files.length;i++)handleHoldingsFile(files[i]);
@@ -1023,9 +1109,17 @@ function renderCompare(){
   document.getElementById("app").innerHTML=h;
   return;
  }
- // LEFT: picker sidebar
+ // LEFT: picker sidebar with sector + cap filters
+ var sectors=[];stocks.forEach(function(s){if(s.sector&&sectors.indexOf(s.sector)<0)sectors.push(s.sector);});
+ sectors.sort();
  var picker='<div class="card picker" style="margin:0"><div style="font-size:12px;font-weight:600;color:var(--mut);margin-bottom:8px">Select stocks ('+compareSel.length+')</div>';
- stocks.slice().sort(function(a,b){return(a.name||a.ticker||"").localeCompare(b.name||b.ticker||"");}).forEach(function(s){
+ picker+='<div style="margin-bottom:8px"><select onchange="cmpSector=this.value;renderCompare()" style="width:100%;margin-bottom:6px"><option value="">All sectors</option>'
+  +sectors.map(function(sec){return '<option value="'+esc(sec)+'"'+(cmpSector===sec?" selected":"")+'>'+esc(sec)+'</option>';}).join("")+'</select>';
+ picker+='<div class="chbtns" style="flex-wrap:wrap"><button class="chbtn '+(!cmpCap?"on":"")+'" onclick="cmpCap=\'\';renderCompare()">All caps</button>'
+  +["Large","Mid","Small"].map(function(c){return '<button class="chbtn '+(cmpCap===c?"on":"")+'" onclick="cmpCap=\''+c+'\';renderCompare()">'+c+'</button>';}).join("")+'</div></div>';
+ stocks.slice()
+  .filter(function(s){return (!cmpSector||s.sector===cmpSector)&&(!cmpCap||s.cap===cmpCap);})
+  .sort(function(a,b){return(a.name||a.ticker||"").localeCompare(b.name||b.ticker||"");}).forEach(function(s){
   var x=score(s),checked=compareSel.indexOf(s.id)>-1;
   picker+='<div class="cksel" onclick="toggleCompare(\''+s.id+'\')">'
    +'<input type="checkbox" '+(checked?"checked":"")+' onclick="event.stopPropagation();toggleCompare(\''+s.id+'\')">'
@@ -1136,6 +1230,12 @@ function renderEditor(){
  h+='<div class="row" style="margin-top:8px"><input type="text" id="f_ticker" placeholder="Ticker" value="'+esc(s.ticker)+'" oninput="setF(\'ticker\',this.value.toUpperCase())">'
   +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)">'
   +'<input class="num" type="number" step="any" id="f_weight" placeholder="Value" value="'+(s.weight!=null?s.weight:"")+'" oninput="setF(\'weight\',this.value)" style="max-width:80px"></div>';
+ h+='<div class="caprow"><span class="caplbl">Market cap</span><div class="capchips">'
+  +["Large","Mid","Small"].map(function(c){return '<button class="capchip '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
+  +'</div></div>';
+ h+='<div class="choicerow" style="margin-top:8px"><span class="chlbl">Market cap</span><div class="chbtns">'
+  +["Large","Mid","Small"].map(function(c){return '<button class="chbtn '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
+  +'</div></div>';
  h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 0 2px">Value = current holding value (shares × today\'s price), not what you originally invested — the sector warning needs today\'s actual exposure. Same unit for every stock; leave blank to skip.</div>';
  h+='<label class="ann" style="margin:14px 0"><input type="checkbox" class="cbx" '+(s.isBank?"checked":"")+' onchange="setBank(this.checked)"> Bank / NBFC — swaps ROCE→ROA, D/E→CAR, EBITDA→NIM; skips interest coverage &amp; OCF</label>';
 
@@ -1215,7 +1315,7 @@ function calcHTML(id,calc,raw){
  h+='<div class="wrapf">';
  calc.fields.forEach(function(fld){
   h+='<div class="cf'+(fld.small?" small":"")+'"><label>'+fld.label+'</label>'
-   +'<input class="num" type="number" step="any" value="'+(raw[fld.k]!=null?raw[fld.k]:(fld.def||""))+'" oninput="setRaw(\''+id+'\',\''+fld.k+'\',this.value)"></div>';
+   +'<input class="num" id="c_'+id+'_'+fld.k+'" type="number" step="any" value="'+(raw[fld.k]!=null?raw[fld.k]:(fld.def||""))+'" oninput="setRaw(\''+id+'\',\''+fld.k+'\',this.value)"></div>';
  });
  h+='</div>';
  if(calc.ann)h+='<label class="ann"><input type="checkbox" class="cbx" '+(raw.ann?"checked":"")+' onchange="setRaw(\''+id+'\',\'ann\',this.checked)"> Figures are quarterly (annualise ×4)</label>';
@@ -1224,6 +1324,8 @@ function calcHTML(id,calc,raw){
 
 /* ===== editor events (targeted updates, no focus loss) ===== */
 function setF(k,val){draft[k]=val;}
+function setCap(c){draft.cap=(draft.cap===c?"":c);renderEditor();}
+function setCap(c){draft.cap=(draft.cap===c?"":c);renderEditor();}
 function setQ(id,val){
  draft.metrics[id]=val;
  if(id==="marginTrend"){draft.metrics.marginTrendManual=true;draft.metrics.marginTrendAuto=false;}
@@ -1254,6 +1356,20 @@ function toggleCalc(id){openCalc[id]=!openCalc[id];renderEditor();}
 function toggleInfo(id){openInfo[id]=!openInfo[id];renderEditor();}
 function setRaw(id,k,val){
  var raw=draft.metrics[id+"__raw"]||{};raw[k]=val;draft.metrics[id+"__raw"]=raw;
+ // #3: the current P/E is the same number for both P/E metrics — when it's entered
+ // in the "vs history" calculator, mirror it into the "vs sector" calculator so you
+ // only type it once. (Only when the sector cur is empty or was auto-filled.)
+ if(id==="peVsHist"&&k==="cur"){
+  var sraw=draft.metrics["peVsSector__raw"]||{};
+  if(sraw.cur===""||sraw.cur==null||sraw._curAuto){
+   sraw.cur=val; sraw._curAuto=true; draft.metrics["peVsSector__raw"]=sraw;
+   var sres=CALCS.peVsSector.compute(sraw);
+   if(sres!=null&&!isNaN(sres)){draft.metrics.peVsSector=String(Math.round(sres*100)/100);var si=document.getElementById("m_peVsSector");if(si)si.value=draft.metrics.peVsSector;}
+   var scf=document.getElementById("c_peVsSector_cur");if(scf)scf.value=val;
+  }
+ }
+ // if the user types directly in the sector cur field, stop auto-syncing it
+ if(id==="peVsSector"&&k==="cur"){var sr=draft.metrics["peVsSector__raw"];if(sr)sr._curAuto=false;}
  var calc=pickCalc(id,draft.isBank),res=calc.compute(raw,raw.ann);
  if(res!=null&&!isNaN(res)){var rv=String(Math.round(res*100)/100);draft.metrics[id]=rv;var inp=document.getElementById("m_"+id);if(inp)inp.value=rv;}
  // Auto-derive Operating margin trend from the 5 OPM years entered in the margin calculator (non-bank).
@@ -1283,18 +1399,25 @@ function valboxHTML(s){
  if(x.p<10)return"";
  var v=valFromMetrics(s);
  var col=v==="Undervalued"?"var(--em)":v==="Overvalued"?"var(--rd)":v==="Fairly Valued"?"var(--am)":"var(--dim)";
+ var isBank=s.isBank;
+ var anchor=isBank?"P/B":"P/E";
  var body;
  if(!v){
-  body='<div class="sub" style="margin:0">Fill in the two <b>P/E</b> metrics (vs its own history, vs sector) above to get a valuation call. Your own numbers drive this — nothing borrowed from another site.</div>';
+  body='<div class="sub" style="margin:0">Fill in the <b>'+anchor+'</b> valuation metric'+(isBank?"":"s")+' above to get a valuation call. Your own numbers drive this — nothing borrowed from another site.</div>';
  }else{
   var m=s.metrics||{};
   var bits=[];
-  if(m.peVsHist!==""&&m.peVsHist!=null)bits.push((+m.peVsHist>=0?"+":"")+(+m.peVsHist).toFixed(0)+"% vs its 5-yr median");
-  if(m.peVsSector!==""&&m.peVsSector!=null)bits.push((+m.peVsSector>=0?"+":"")+(+m.peVsSector).toFixed(0)+"% vs sector");
+  if(isBank){
+   if(m.pbVsHist!==""&&m.pbVsHist!=null)bits.push((+m.pbVsHist>=0?"+":"")+(+m.pbVsHist).toFixed(0)+"% vs its own P/B history");
+   if(m.peVsSector!==""&&m.peVsSector!=null)bits.push((+m.peVsSector>=0?"+":"")+(+m.peVsSector).toFixed(0)+"% vs sector");
+  }else{
+   if(m.peVsHist!==""&&m.peVsHist!=null)bits.push((+m.peVsHist>=0?"+":"")+(+m.peVsHist).toFixed(0)+"% vs its own history");
+   if(m.peVsSector!==""&&m.peVsSector!=null)bits.push((+m.peVsSector>=0?"+":"")+(+m.peVsSector).toFixed(0)+"% vs sector");
+  }
   body='<div style="font-size:16px;font-weight:700;color:'+col+';margin-bottom:4px">'+v+'</div>'
-   +'<div class="sub" style="margin:0">Derived from your P/E inputs: '+bits.join(" · ")+'. Negative = cheaper.</div>';
+   +'<div class="sub" style="margin:0">Derived from your '+anchor+' inputs: '+bits.join(" · ")+'. Negative = cheaper.'+(isBank?" For a bank, read this alongside ROE — a higher P/B is justified by higher returns on equity.":"")+'</div>';
  }
- return '<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation — from your P/E metrics</div>'+body+'</div>';
+ return '<div class="valbox"><div class="cat" style="color:var(--em);margin:0 0 6px">Valuation — from your '+anchor+' metrics</div>'+body+'</div>';
 }
 function refreshLive(){
  var x=score(draft),v=verd(x.p,x.max),bt=buyTag(x.p,valFromMetrics(draft));
