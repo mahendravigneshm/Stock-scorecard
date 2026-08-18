@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#020617">
+<meta name="theme-color" content="#f4f2ec">
 <title>Stock Scorecard</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -39,7 +39,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
 </script>
 <style>
-  :root{--bg:#020617;--card:#0f172a;--card2:#1e293b;--line:#334155;--txt:#f1f5f9;--mut:#94a3b8;--dim:#64748b;--cyan:#22d3ee;--em:#34d399;--am:#fbbf24;--rd:#f87171;}
+  :root{--bg:#f4f2ec;--card:#ffffff;--card2:#eceae2;--line:#dcd8ce;--txt:#1f2733;--mut:#5b6472;--dim:#8a93a1;--cyan:#4a6d8c;--em:#15803d;--am:#b45309;--rd:#dc2626;}
+  [data-theme="dark"]{--bg:#141b2e;--card:#1c2740;--card2:#26334f;--line:#3a4766;--txt:#f1f5f9;--mut:#94a3b8;--dim:#64748b;--cyan:#6ea3c9;--em:#34d399;--am:#fbbf24;--rd:#f87171;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5}
   .wrap{max-width:1180px;margin:0 auto;padding:20px 22px 60px}
@@ -47,6 +48,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .dashgrid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
   @media(min-width:900px){.dashgrid{grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr)}}
   .dashgrid .col-side{display:flex;flex-direction:column;gap:10px}
+  .alloc-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+  .alloc-bottom>.action{grid-column:1/-1}
+  @media(max-width:640px){.alloc-bottom{grid-template-columns:1fr}}
   /* compare: sidebar list + metrics area */
   .cmpgrid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
   @media(min-width:900px){.cmpgrid{grid-template-columns:270px minmax(0,1fr)}}
@@ -55,7 +59,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
   .sub{color:var(--dim);font-size:13px;margin-top:6px}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-  .btn{background:var(--cyan);color:#052e33;font-weight:600;font-size:14px;padding:10px 16px;border-radius:8px}
+  .btn{background:var(--cyan);color:#ffffff;font-weight:600;font-size:14px;padding:10px 16px;border-radius:8px}
   .btn:active{opacity:.85}
   .btn-o{border:1px solid var(--line);color:var(--mut);padding:9px 14px;border-radius:8px;font-size:14px}
   .row{display:flex;align-items:center;gap:10px}
@@ -101,7 +105,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .flabel .th{color:var(--dim);font-family:ui-monospace,monospace;font-size:12px;margin-left:4px}
   .flabel .vf{color:rgba(251,191,36,.7);font-size:11px;margin-left:4px}
   .fbtn{font-family:ui-monospace,monospace;font-size:13px;border:1px solid var(--line);color:var(--cyan);border-radius:5px;padding:3px 7px}
-  .fbtn.on{background:var(--cyan);color:#052e33;border-color:var(--cyan)}
+  .fbtn.on{background:var(--cyan);color:#ffffff;border-color:var(--cyan)}
   .ibtn{font-family:ui-serif,Georgia,serif;font-weight:700;font-size:13px;border:1px solid var(--line);color:var(--mut);border-radius:50%;width:24px;height:24px;padding:0;line-height:1;flex:none}
   .ibtn.on{background:var(--mut);color:var(--bg);border-color:var(--mut)}
   .infobox{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:2px 0 10px 19px;font-size:12px;line-height:1.55;color:var(--mut)}
@@ -127,7 +131,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .caplbl{font-size:12px;color:var(--mut);min-width:74px}
   .capchips{display:flex;gap:6px}
   .capchip{font-size:12px;padding:5px 12px;border:1px solid var(--line);background:var(--card2);color:var(--mut);border-radius:7px;cursor:pointer}
-  .capchip.on{background:var(--cyan);color:#052e33;border-color:var(--cyan);font-weight:600}
+  .capchip.on{background:var(--cyan);color:#ffffff;border-color:var(--cyan);font-weight:600}
   .capbadge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--card2);color:var(--mut)}
   .capbadge.cap-large{background:rgba(77,163,255,.16);color:#4da3ff}
   .capbadge.cap-mid{background:rgba(224,168,61,.16);color:#e0a83d}
@@ -145,7 +149,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .capbar-top{display:flex;justify-content:space-between;font-size:12px}
   .capbar{height:7px;border-radius:4px;background:var(--line);overflow:hidden}
   .capbar>span{display:block;height:100%}
-  .chbtn.on{background:var(--cyan);color:#052e33;border-color:var(--cyan);font-weight:600}
+  .chbtn.on{background:var(--cyan);color:#ffffff;border-color:var(--cyan);font-weight:600}
   .pgrouphdr{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin:16px 0 8px}
   .ptable{display:flex;flex-direction:column;gap:1px;background:var(--line);border-radius:10px;overflow:hidden}
   .prow{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--card);padding:11px 13px}
@@ -449,20 +453,34 @@ function normalizeVal(v){
    (negative = cheaper). We blend whichever are filled and map to the same 3 tiers. */
 function valFromMetrics(s){
  var m=s.metrics||{};
- var parts=[];
  if(s.isBank){
   // Banks are valued off book value alone — P/B vs its own history. P/E is not a
   // reliable anchor for banks (earnings swing with provisioning), so it's excluded.
-  if(m.pbVsHist!==""&&m.pbVsHist!=null&&!isNaN(+m.pbVsHist))parts.push(+m.pbVsHist);
- }else{
-  if(m.peVsHist!==""&&m.peVsHist!=null&&!isNaN(+m.peVsHist))parts.push(+m.peVsHist);
-  if(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))parts.push(+m.peVsSector);
+  if(m.pbVsHist===""||m.pbVsHist==null||isNaN(+m.pbVsHist))return"";
+  var pb=+m.pbVsHist;
+  if(pb<=-10)return"Undervalued";
+  if(pb>=10)return"Overvalued";
+  return"Fairly Valued";
  }
- if(!parts.length)return"";               // no valuation data yet → unknown
- var avg=parts.reduce(function(a,b){return a+b;},0)/parts.length;
- // ≤ −10% cheaper = Undervalued · within ±10% = Fairly Valued · ≥ +10% pricier = Overvalued
- if(avg<=-10)return"Undervalued";
- if(avg>=10)return"Overvalued";
+ var hist=(m.peVsHist!==""&&m.peVsHist!=null&&!isNaN(+m.peVsHist))?+m.peVsHist:null;
+ var sec=(m.peVsSector!==""&&m.peVsSector!=null&&!isNaN(+m.peVsSector))?+m.peVsSector:null;
+ if(hist==null&&sec==null)return"";
+ // A stock's own history is the more reliable anchor than the sector: the whole
+ // sector can be over- or under-priced at once, so "cheap vs peers" can be a false
+ // bargain. When only one is present, use it. When both are present, the own-history
+ // reading dominates — the sector only nudges the call, and can't override history
+ // when the two disagree. (e.g. cheap vs sector but expensive vs its own 5yr median
+ // → treated as expensive, not cheap.)
+ var basis;
+ if(hist==null)basis=sec;
+ else if(sec==null)basis=hist;
+ else{
+  var disagree=(hist<0)!==(sec<0);        // one says cheap, the other says pricey
+  if(disagree)basis=hist;                  // history wins outright on disagreement
+  else basis=hist*0.7+sec*0.3;             // agree → history-weighted blend
+ }
+ if(basis<=-10)return"Undervalued";
+ if(basis>=10)return"Overvalued";
  return"Fairly Valued";
 }
 function action(p,v){v=normalizeVal(v);if(p<7)return"Exit in a planned way, over 2-3 sessions";
@@ -668,6 +686,24 @@ function SEED(){
 /* ===== state ===== */
 var KEY="stockScorecard:v1";
 var stocks=load(),draft=null,openCalc={};
+var THEME_KEY="stockScorecard:theme";
+function applyTheme(t){
+ if(t==="dark")document.documentElement.setAttribute("data-theme","dark");
+ else document.documentElement.removeAttribute("data-theme");
+ var meta=document.querySelector('meta[name="theme-color"]');
+ if(meta)meta.setAttribute("content",t==="dark"?"#141b2e":"#f4f2ec");
+}
+function toggleTheme(){
+ var cur=document.documentElement.getAttribute("data-theme")==="dark"?"dark":"light";
+ var next=cur==="dark"?"light":"dark";
+ try{localStorage.setItem(THEME_KEY,next);}catch(e){}
+ applyTheme(next);
+ render();
+}
+(function initTheme(){
+ var saved;try{saved=localStorage.getItem(THEME_KEY);}catch(e){}
+ applyTheme(saved||"light");   // default light (the calm theme you chose)
+})();
 var HKEY="stockScorecard:holdings";
 var holdings=loadHoldings();
 function loadHoldings(){try{return JSON.parse(localStorage.getItem(HKEY))||[];}catch(e){return[];}}
@@ -709,8 +745,12 @@ function renderDash(){
  var exit=sc.filter(function(o){return o.x.p<7;}).length;
  var due=stocks.filter(function(s){var d=daysSince(s.lastUpdated);return d===null||d>90;}).length;
  var h='';
- h+='<div class="between"><div style="display:flex;align-items:center;gap:10px"><div style="display:flex;align-items:center;gap:9px"><span class="brandmark"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="26" height="26"><rect width="64" height="64" rx="14" fill="#0b2a4a"/><polyline points="12,44 26,32 36,40 52,20" fill="none" stroke="#2fd4c6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="42,20 52,20 52,30" fill="none" stroke="#2fd4c6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h1 style="margin:0">Scorecard</h1></div></div><div class="sub" style="margin-left:36px">'+stocks.length+' holdings · '+due+' to review</div></div>'
-   +'<button class="btn" onclick="addStock()">+ Add</button></div>';
+ h+='<div class="sub" style="margin-left:36px">'+stocks.length+' holdings · '+due+' to review</div></div>'
+   +'<div class="row" style="gap:8px;align-items:center">'
+   +'<button class="btn-o" style="padding:7px 11px" onclick="toggleTheme()" title="Switch light/dark">'+(document.documentElement.getAttribute("data-theme")==="dark"?"☀":"☾")+'</button>'
+   +'<button class="btn-o" style="padding:7px 12px" onclick="'+(driveState.token?"syncNow()":"connectDrive()")+'">'+(driveState.token?"⟳ Sync":"Connect Drive")+'</button>'
+   +'<button class="btn" onclick="addStock()">+ Add</button></div></div>';
+ h+='<div class="sub" id="driveStatus" style="text-align:right;margin:-4px 2px 4px 0;font-size:11px">'+driveStatusText()+'</div>';
  h+=tabbarHTML();
 
  var sa=sectorAlloc();
@@ -724,12 +764,8 @@ function renderDash(){
  }
  left+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice. Tap any row for the full breakdown.</div>';
 
- // ---- RIGHT COLUMN: summary, sector, drive, backup ----
+ // ---- allocations (rendered at the bottom, full width) ----
  var right='';
- right+='<div class="summary" style="margin:0">'
-   +'<div class="stat"><div class="n em">'+strong+'</div><div class="l">Strong</div></div>'
-   +'<div class="stat"><div class="n am">'+watch+'</div><div class="l">Watch</div></div>'
-   +'<div class="stat"><div class="n rd">'+exit+'</div><div class="l">Exit</div></div></div>';
  if(sa.over.length){
   right+='<div class="action a-rd" style="margin:0">⚠ Sector over-allocation: '
    +sa.over.map(function(r){return esc(r.sec)+' '+(r.mode==="w"?Math.round(r.pct)+'%':r.cnt+' stocks');}).join(', ')
@@ -767,15 +803,15 @@ function renderDash(){
    right+='</div>';
   }
  })();
- right+='<div class="live" style="margin:0"><div><div style="font-size:13px;font-weight:600">Google Drive</div><div class="sub" id="driveStatus" style="margin-top:2px">'+driveStatusText()+'</div></div>'
-   +'<button class="btn-o" onclick="'+(driveState.token?"syncNow()":"connectDrive()")+'">'+(driveState.token?"Sync now":"Connect &amp; sync")+'</button></div>';
- right+='<div class="row">'
+ var backup='<div class="row" style="margin-top:10px">'
    +'<button class="btn-o" onclick="exportData()">Export backup</button>'
    +'<button class="btn-o" onclick="document.getElementById(\'importFile\').click()">Import backup</button>'
    +'<input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(this)"></div>';
- right+='<div style="font-size:11px;color:var(--dim)">Google Drive is the single source of truth. Every save writes straight to Drive, and every device loads from it — no local-only copies, nothing to reconcile.</div>';
 
- h+='<div class="dashgrid"><div class="col-main">'+left+'</div><div class="col-side">'+right+'</div></div>';
+ // Single-column: holdings first, allocations at the bottom (full width, side by side)
+ h+='<div class="col-main">'+left+'</div>';
+ if(right)h+='<div class="alloc-bottom">'+right+'</div>';
+ h+=backup;
  document.getElementById("app").innerHTML=h;
 }
 
@@ -1033,6 +1069,51 @@ function holdPrice(h){
 function curVal(h){var p=holdPrice(h);return p==null?null:p*h.qty;}
 function pnl(h){var cv=curVal(h);return cv==null?null:cv-h.invested;}
 
+/* Portfolio value history — one snapshot per day, stored locally and synced to Drive.
+   Lets us draw a value-over-time line. Capped at ~365 points. */
+var PFHIST_KEY="stockScorecard:pfHistory";
+var pfHistory=loadPfHistory();
+function loadPfHistory(){try{return JSON.parse(localStorage.getItem(PFHIST_KEY))||[];}catch(e){return[];}}
+function persistPfHistory(){try{localStorage.setItem(PFHIST_KEY,JSON.stringify(pfHistory));}catch(e){}}
+function recordPfSnapshot(val,inv){
+ if(!val||val<=0)return;
+ var today=new Date().toISOString().slice(0,10);
+ var last=pfHistory[pfHistory.length-1];
+ if(last&&last.d===today){last.v=Math.round(val);last.i=Math.round(inv);}   // update today's
+ else{pfHistory.push({d:today,v:Math.round(val),i:Math.round(inv)});}
+ if(pfHistory.length>365)pfHistory=pfHistory.slice(-365);
+ persistPfHistory();
+}
+function pfChartHTML(){
+ var pts=pfHistory.slice();
+ if(pts.length<2)
+  return '<div class="card" style="margin:0"><div style="font-size:13px;font-weight:600;margin-bottom:6px">Portfolio value</div>'
+   +'<div class="sub">The value-over-time chart appears once there are at least two days of history. Open this page on different days (or after syncing) and it fills in.</div></div>';
+ var W=520,H=140,pad=8;
+ var vs=pts.map(function(p){return p.v;});
+ var min=Math.min.apply(null,vs),max=Math.max.apply(null,vs);
+ if(min===max){min=min*0.98;max=max*1.02;}
+ var n=pts.length;
+ function x(i){return pad+(W-2*pad)*(i/(n-1));}
+ function y(v){return pad+(H-2*pad)*(1-(v-min)/(max-min));}
+ var line=pts.map(function(p,i){return (i?"L":"M")+x(i).toFixed(1)+" "+y(p.v).toFixed(1);}).join(" ");
+ var area=line+" L"+x(n-1).toFixed(1)+" "+(H-pad)+" L"+x(0).toFixed(1)+" "+(H-pad)+" Z";
+ var first=pts[0].v,lastv=pts[n-1].v,chg=lastv-first,pc=first?chg/first*100:0;
+ var up=chg>=0;
+ var col=up?"var(--em)":"var(--rd)";
+ return '<div class="card" style="margin:0">'
+  +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">'
+  +'<div style="font-size:13px;font-weight:600">Portfolio value</div>'
+  +'<div style="font-size:12px;color:'+col+'">'+(up?"+":"")+fmtI(chg)+' ('+(up?"+":"")+pc.toFixed(1)+'%) over '+n+' days</div></div>'
+  +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'
+  +'<defs><linearGradient id="pfgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+ (up?"#15803d":"#dc2626") +'" stop-opacity="0.18"/><stop offset="1" stop-color="'+ (up?"#15803d":"#dc2626") +'" stop-opacity="0"/></linearGradient></defs>'
+  +'<path d="'+area+'" fill="url(#pfgrad)"/>'
+  +'<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+  +'<circle cx="'+x(n-1).toFixed(1)+'" cy="'+y(lastv).toFixed(1)+'" r="3.5" fill="'+col+'"/>'
+  +'</svg>'
+  +'<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim);margin-top:2px"><span>'+pts[0].d+'</span><span>'+pts[n-1].d+'</span></div>'
+  +'</div>';
+}
 function renderPortfolio(){
  var h="<h1>Portfolio</h1>";
  h+='<div class="sub">FIFO cost basis from your imported tradebooks · both accounts merged</div>';
@@ -1054,6 +1135,7 @@ function renderPortfolio(){
  holdings.forEach(function(x){realTot+=(x.realised||0);});
  active.forEach(function(x){invTot+=x.invested;var cv=curVal(x);if(cv!=null){valTot+=cv;haveP=true;}else{valTot+=x.invested;}});
  var pnlTot=haveP?valTot-invTot:null;
+ recordPfSnapshot(valTot,invTot);
 
  h+='<div class="dashgrid"><div class="col-main">';
 
@@ -1091,6 +1173,9 @@ function renderPortfolio(){
    +(pnlTot!=null?'<div class="psummrow"><span>Unrealised P&amp;L</span><span class="'+(pnlTot>=0?"up":"dn")+'">'+(pnlTot>=0?"+":"")+'₹'+fmtI(pnlTot)+' ('+(pnlTot>=0?"+":"")+(pnlTot/invTot*100).toFixed(1)+'%)</span></div>':'')
    +'<div class="psummrow"><span>Realised P&amp;L</span><span class="'+(realTot>=0?"up":"dn")+'">'+(realTot>=0?"+":"")+'₹'+fmtI(realTot)+'</span></div>'
    +'</div>';
+
+ // Portfolio value over time
+ h+=pfChartHTML();
 
  // Allocation by class
  var byCls={Stock:0,ETF:0,Fund:0};
@@ -1680,7 +1765,7 @@ function pullFromDrive(){
 function pushHoldings(){return pushToDrive();}
 function pushToDrive(){
  window._lastPushTs=Date.now();
- var body=JSON.stringify({stocks:stocks,holdings:holdings,alertRules:alertRules,savedAt:new Date().toISOString(),exportedAt:new Date().toISOString()},null,2);
+ var body=JSON.stringify({stocks:stocks,holdings:holdings,alertRules:alertRules,pfHistory:pfHistory,savedAt:new Date().toISOString(),exportedAt:new Date().toISOString()},null,2);
  var metadata={name:DRIVE_CONFIG.fileName,mimeType:"application/json"};
  var boundary="sc_boundary_"+Date.now();
  var multipart="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(metadata)+"\r\n"
@@ -1782,6 +1867,14 @@ function quietSync(){
   try{localStorage.setItem(KEY+":ts",String(remoteTs||Date.now()));}catch(e){}
   if(remote.holdings){holdings=remote.holdings;persistHoldings();}
   if(remote.alertRules){alertRules=remote.alertRules;persistRules();}
+  if(remote.pfHistory&&remote.pfHistory.length){
+   // merge by date — union of local + remote, remote wins on same day
+   var byDate={};
+   pfHistory.forEach(function(p){byDate[p.d]=p;});
+   remote.pfHistory.forEach(function(p){byDate[p.d]=p;});
+   pfHistory=Object.keys(byDate).sort().map(function(d){return byDate[d];});
+   persistPfHistory();
+  }
   driveState.lastSynced=Date.now();persistDriveMeta();
   setSyncStatus("Synced just now");render();
  }).catch(function(err){console.warn(err);setSyncStatus("Sync failed — tap to retry");});
