@@ -39,8 +39,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
 </script>
 <style>
-  :root{--bg:#f4f2ec;--card:#ffffff;--card2:#eceae2;--line:#dcd8ce;--txt:#1f2733;--mut:#5b6472;--dim:#8a93a1;--cyan:#4a6d8c;--em:#15803d;--am:#b45309;--rd:#dc2626;}
-  [data-theme="dark"]{--bg:#141b2e;--card:#1c2740;--card2:#26334f;--line:#3a4766;--txt:#f1f5f9;--mut:#94a3b8;--dim:#64748b;--cyan:#6ea3c9;--em:#34d399;--am:#fbbf24;--rd:#f87171;}
+  :root{--bg:#f4f2ec;--card:#ffffff;--card2:#eceae2;--line:#dcd8ce;--txt:#1f2733;--mut:#5b6472;--dim:#8a93a1;--cyan:#4a6d8c;--em:#15803d;--am:#b45309;--rd:#dc2626;--dotp:#22c55e;--dotf:#ef4444;}
+  [data-theme="dark"]{--bg:#141b2e;--card:#1c2740;--card2:#26334f;--line:#3a4766;--txt:#f1f5f9;--mut:#94a3b8;--dim:#64748b;--cyan:#6ea3c9;--em:#34d399;--am:#fbbf24;--rd:#f87171;--dotp:#34d399;--dotf:#f87171;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5}
   .wrap{max-width:1180px;margin:0 auto;padding:20px 22px 60px}
@@ -100,7 +100,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .cat{font-size:11px;font-family:ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:16px 0 8px}
   .fr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .dot{height:9px;width:9px;border-radius:50%;flex:none}
-  .dot.p{background:var(--em)}.dot.f{background:var(--rd)}.dot.u{background:#475569}
+  .dot.p{background:var(--dotp)}.dot.f{background:var(--dotf)}.dot.u{background:var(--dim)}
   .flabel{flex:1;font-size:14px;min-width:0}
   .flabel .th{color:var(--dim);font-family:ui-monospace,monospace;font-size:12px;margin-left:4px}
   .flabel .vf{color:rgba(251,191,36,.7);font-size:11px;margin-left:4px}
@@ -126,6 +126,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .chbtns{display:flex;gap:6px}
   .chbtn{font-size:12px;padding:5px 12px;border:1px solid var(--line);background:var(--card2);color:var(--mut);border-radius:7px;cursor:pointer}
   .brandmark{display:inline-flex;align-items:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+  .apptitle{font-size:22px;font-weight:800;color:#111;margin:0;letter-spacing:-0.3px}
+  [data-theme="dark"] .apptitle{color:#f8fafc}
   .brandmark svg{border-radius:7px;display:block}
   .caprow{display:flex;align-items:center;gap:10px;margin-top:8px}
   .caplbl{font-size:12px;color:var(--mut);min-width:74px}
@@ -746,12 +748,14 @@ function renderDash(){
  var exit=sc.filter(function(o){return o.x.p<7;}).length;
  var due=stocks.filter(function(s){var d=daysSince(s.lastUpdated);return d===null||d>90;}).length;
  var h='';
- h+='<div class="sub" style="margin-left:36px">'+stocks.length+' holdings · '+due+' to review</div></div>'
-   +'<div class="row" style="gap:8px;align-items:center">'
+ h+='<div class="between" style="align-items:flex-start">'
+   +'<div><h1 class="apptitle">Stock Scorecard</h1>'
+   +'<div class="sub">'+stocks.length+' holdings · '+due+' to review</div></div>'
+   +'<div class="row" style="gap:8px;align-items:center;flex:none">'
    +'<button class="btn-o" style="padding:7px 11px" onclick="toggleTheme()" title="Switch light/dark">'+(document.documentElement.getAttribute("data-theme")==="dark"?"☀":"☾")+'</button>'
    +'<button class="btn-o" style="padding:7px 12px" onclick="'+(driveState.token?"syncNow()":"connectDrive()")+'">'+(driveState.token?"⟳ Sync":"Connect Drive")+'</button>'
    +'<button class="btn" onclick="addStock()">+ Add</button></div></div>';
- h+='<div class="sub" id="driveStatus" style="text-align:right;margin:-4px 2px 4px 0;font-size:11px">'+driveStatusText()+'</div>';
+ h+='<div class="sub" id="driveStatus" style="text-align:right;margin:-2px 2px 4px 0;font-size:11px">'+driveStatusText()+'</div>';
  h+=tabbarHTML();
 
  var sa=sectorAlloc();
@@ -1044,7 +1048,7 @@ function alertsPanelHTML(){
   Object.keys(R).forEach(function(k){
    var r=R[k];
    h+='<div class="arule"><label class="ack"><input type="checkbox" '+(r.on?"checked":"")+' onchange="setRuleOn(\''+k+'\',this.checked)"><span>'+r.label+'</span></label>'
-    +(r.val!=null&&k!=="overvalued"?'<input class="aval" type="number" value="'+r.val+'" oninput="setRuleVal(\''+k+'\',this.value)">':'')+'</div>';
+    +(r.val!=null&&k!=="overvalued"?'<input class="aval" type="number" value="'+r.val+'" oninput="setRuleVal(\''+k+'\',this.value)" onblur="commitPortfolioEdit()">':'')+'</div>';
   });
  }else if(!al.length){
   h+='<div class="sub">Nothing needs attention against your current rules. Tap Rules to adjust thresholds.</div>';
@@ -1060,7 +1064,7 @@ function alertsPanelHTML(){
 var alertCfgOpen=false;
 function toggleAlertCfg(){alertCfgOpen=!alertCfgOpen;renderPortfolio();}
 function setRuleOn(k,v){alertRules[k].on=v;persistRules();renderPortfolio();if(driveState.token)pushHoldings();}
-function setRuleVal(k,v){alertRules[k].val=+v;persistRules();clearTimeout(window._arT);window._arT=setTimeout(function(){renderPortfolio();if(driveState.token)pushHoldings();},500);}
+function setRuleVal(k,v){alertRules[k].val=+v;persistRules();window._pfDirty=true;}
 
 /* ═══════════════ PORTFOLIO VIEW ═══════════════ */
 function fmtI(n){return Math.round(n).toLocaleString("en-IN");}
@@ -1159,7 +1163,7 @@ function renderPortfolio(){
       +(peditKey===(x.isin||x.symbol)?holdingEditHTML(x):'')
     +'</div>'
     +'<div class="pprice">'
-      +'<input class="ltp" type="number" step="any" placeholder="'+(x.close!==""&&x.close!=null?(+x.close).toFixed(1):"LTP")+'" value="'+(x.ltp!=null&&x.ltp!==""?x.ltp:"")+'" oninput="setLtp(\''+(x.isin||x.symbol)+'\',this.value)" title="Statement price shown; type to override">'
+      +'<input class="ltp" type="number" step="any" placeholder="'+(x.close!==""&&x.close!=null?(+x.close).toFixed(1):"LTP")+'" value="'+(x.ltp!=null&&x.ltp!==""?x.ltp:"")+'" oninput="setLtp(\''+(x.isin||x.symbol)+'\',this.value)" onblur="commitPortfolioEdit()" title="Statement price shown; type to override">'
       +(pl!=null?'<div class="ppnl '+(pl>=0?"up":"dn")+'">'+(pl>=0?"+":"")+fmtI(pl)+' <span>('+(plpc>=0?"+":"")+plpc.toFixed(1)+'%)</span></div>':'<div class="psub" style="text-align:right">enter LTP for P&amp;L</div>')
     +'</div>'
    +'</div>';
@@ -1225,9 +1229,15 @@ function setLtp(key,val){
  var hh=holdings.filter(function(x){return (x.isin||x.symbol)===key;})[0];
  if(!hh)return;
  hh.ltp=val;persistHoldings();
- // update just this row's P&L without full re-render (keep focus)
- clearTimeout(window._ltpT);
- window._ltpT=setTimeout(function(){renderPortfolio();if(driveState.token)pushHoldings();},600);
+ // Do NOT re-render while typing — that would destroy the input and move the cursor.
+ // Just mark that a sync is pending; the full refresh happens on blur (commitPortfolioEdit).
+ window._pfDirty=true;
+}
+function commitPortfolioEdit(){
+ if(!window._pfDirty)return;
+ window._pfDirty=false;
+ renderPortfolio();
+ if(driveState.token)pushHoldings();
 }
 
 var peditKey=null;
@@ -1235,9 +1245,9 @@ function editHolding(key){peditKey=(peditKey===key?null:key);renderPortfolio();}
 function holdingEditHTML(x){
  var k=x.isin||x.symbol;
  return '<div class="holdedit" onclick="event.stopPropagation()">'
-  +'<div class="herow"><label>Quantity</label><input type="number" step="any" value="'+x.qty+'" oninput="setHold(\''+k+'\',\'qty\',this.value)"></div>'
-  +'<div class="herow"><label>Average buy price</label><input type="number" step="any" value="'+x.avg+'" oninput="setHold(\''+k+'\',\'avg\',this.value)"></div>'
-  +'<div class="herow"><label>Current price (LTP)</label><input type="number" step="any" value="'+(x.ltp!=null&&x.ltp!==""?x.ltp:(x.close!=null&&x.close!==""?x.close:""))+'" oninput="setHold(\''+k+'\',\'ltp\',this.value)"></div>'
+  +'<div class="herow"><label>Quantity</label><input type="number" step="any" value="'+x.qty+'" oninput="setHold(\''+k+'\',\'qty\',this.value)" onblur="commitPortfolioEdit()"></div>'
+  +'<div class="herow"><label>Average buy price</label><input type="number" step="any" value="'+x.avg+'" oninput="setHold(\''+k+'\',\'avg\',this.value)" onblur="commitPortfolioEdit()"></div>'
+  +'<div class="herow"><label>Current price (LTP)</label><input type="number" step="any" value="'+(x.ltp!=null&&x.ltp!==""?x.ltp:(x.close!=null&&x.close!==""?x.close:""))+'" oninput="setHold(\''+k+'\',\'ltp\',this.value)" onblur="commitPortfolioEdit()"></div>'
   +'<div class="herow" style="justify-content:flex-end;gap:8px;border:none">'
    +'<button class="chbtn" onclick="removeHolding(\''+k+'\')" style="color:var(--rd)">Remove</button>'
    +'<button class="chbtn on" onclick="peditKey=null;renderPortfolio()">Done</button></div>'
@@ -1250,8 +1260,8 @@ function setHold(key,field,val){
  else if(field==="avg"){hh.avg=+val||0;hh.invested=hh.qty*hh.avg;}
  else if(field==="ltp"){hh.ltp=val;}
  persistHoldings();
- clearTimeout(window._heT);
- window._heT=setTimeout(function(){renderPortfolio();if(driveState.token)pushHoldings();},700);
+ // Don't re-render mid-typing (it would move the cursor). Refresh on blur instead.
+ window._pfDirty=true;
 }
 function removeHolding(key){
  if(!confirm("Remove this holding from your portfolio?"))return;
@@ -1886,6 +1896,18 @@ document.addEventListener("visibilitychange",function(){
  if(document.visibilityState==="visible"&&driveState.token)quietSync();
 });
 window.addEventListener("focus",function(){ if(driveState.token)quietSync(); });
+
+// Fix: scrolling the mouse wheel over a focused number input changes its value.
+// Block that everywhere by preventing wheel when a number input is focused.
+document.addEventListener("wheel",function(e){
+ var el=document.activeElement;
+ if(el&&el.tagName==="INPUT"&&el.type==="number"&&el===e.target){el.blur();}
+},{passive:true});
+// Belt-and-braces: also stop the value change directly on the input.
+document.addEventListener("wheel",function(e){
+ var t=e.target;
+ if(t&&t.tagName==="INPUT"&&t.type==="number"&&document.activeElement===t){e.preventDefault();}
+},{passive:false});
 
 render();
 autoConnectDrive();
