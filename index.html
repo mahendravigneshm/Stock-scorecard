@@ -136,7 +136,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .capbadge.cap-large{background:rgba(77,163,255,.16);color:#4da3ff}
   .capbadge.cap-mid{background:rgba(224,168,61,.16);color:#e0a83d}
   .capbadge.cap-small{background:rgba(194,91,138,.16);color:#c25b8a}
-  .sumline{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .sumline{display:inline-flex;flex-wrap:wrap;gap:5px;vertical-align:middle}
   .editsum{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
   .sumchip{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:9px;background:var(--card2);white-space:nowrap}
   .sumchip.em{background:rgba(63,185,107,.15);color:#3fb96b}
@@ -206,11 +206,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   /* ===== compact stock table (dashboard) ===== */
   .theadrow{display:flex;align-items:center;gap:8px;padding:10px 4px 7px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);border-bottom:1px solid var(--line)}
-  .trow{display:flex;align-items:center;gap:8px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+  .trow{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line);cursor:pointer}
   .trow:active{background:var(--card2)}
   .trow .tn{flex:1;min-width:0}
-  .trow .tname{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .trow .tsec{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .tnline{display:flex;align-items:center;flex-wrap:wrap;gap:8px;row-gap:5px}
+  .trow .tname{font-weight:600;font-size:13.5px}
+  .trow .tsec{font-size:11px;color:var(--dim)}
   .tcol-score{width:38px;text-align:right;flex:none}
   .tcol-tag{width:46px;text-align:center;flex:none}
   .tcol-rev{width:42px;text-align:right;flex:none}
@@ -824,9 +825,11 @@ function trowHTML(s,x){
  var revCls=(d===null||d>90)?"rd":"";
  var flags=qConcerns(s);
  return '<div class="trow" onclick="editStock(\''+s.id+'\')">'
-  +'<div class="tn"><div class="tname">'+esc(s.name||s.ticker)+(flags>0?' <span style="color:var(--rd)" title="'+flags+' quality concern'+(flags>1?"s":"")+'">⚠</span>':'')+'</div>'
-  +'<div class="tsec">'+esc(s.sector||"")+(s.isBank?" · Bank":"")+(s.cap?" · "+s.cap+" cap":"")+'</div>'
-  +'<div class="sumline">'+summaryChipsHTML(s)+'</div></div>'
+  +'<div class="tn"><div class="tnline">'
+    +'<span class="tname">'+esc(s.name||s.ticker)+(flags>0?' <span style="color:var(--rd)" title="'+flags+' quality concern'+(flags>1?"s":"")+'">⚠</span>':'')+'</span>'
+    +'<span class="tsec">'+esc(s.sector||"")+(s.isBank?" · Bank":"")+(s.cap?" · "+s.cap+" cap":"")+'</span>'
+    +'<span class="sumline">'+summaryChipsHTML(s)+'</span>'
+  +'</div></div>'
   +'<span class="tcol-score"><span class="tscore '+v.c+'">'+x.p+'</span></span>'
   +'<span class="tcol-tag"><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></span>'
   +'<span class="tcol-rev"><span class="trev '+revCls+'">'+rev+'</span></span>'
