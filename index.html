@@ -133,6 +133,27 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .notesarea{width:100%;min-height:80px;resize:vertical;padding:10px 12px;font-size:13px;line-height:1.5;font-family:inherit;background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--txt);box-sizing:border-box}
   .notesarea::placeholder{color:var(--dim)}
   .noteflag{font-size:11px;opacity:.6;cursor:help}
+  .biztype{display:flex;align-items:center;gap:10px;margin:14px 0 0}
+  .fwsec{margin:10px 0}
+  .fwtitle{font-size:13px;font-weight:700;margin:16px 0 8px}
+  .jrow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .jlbl{flex:1;font-size:13px;min-width:0}
+  .jlbl .sub{font-size:11px;margin-top:1px}
+  .jsel{min-width:140px;padding:6px 8px;font-size:13px;background:var(--card2);border:1px solid var(--line);border-radius:7px;color:var(--txt)}
+  .numwrap{display:flex;align-items:center;gap:5px}
+  .nunit{font-size:12px;color:var(--dim)}
+  .bandcard{border-radius:12px;padding:18px;margin:14px 0;text-align:center}
+  .bandbig{font-size:28px;font-weight:800;letter-spacing:-0.5px;margin:2px 0}
+  .bandscore{font-size:13px;color:var(--mut)}
+  .ovbox{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--rd);margin-top:10px;text-align:left}
+  .unvetted{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:11.5px;color:var(--mut);margin-top:8px;text-align:left}
+  .fwrow{display:flex;align-items:center;gap:10px;padding:5px 0}
+  .fwname{flex:1;font-size:12.5px}
+  .fwwt{font-size:11px;color:var(--dim);width:34px;text-align:right}
+  .fwbar{width:90px;height:7px;background:var(--card2);border-radius:4px;overflow:hidden}
+  .fwbarfill{height:100%}
+  .fwpts{width:52px;text-align:right;font-size:11.5px;font-weight:600}
+  .migbanner{background:rgba(180,83,9,.10);border:1px solid rgba(180,83,9,.28);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--am);margin-top:12px}
   .brandmark svg{border-radius:7px;display:block}
   .caprow{display:flex;align-items:center;gap:10px;margin-top:8px}
   .caplbl{font-size:12px;color:var(--mut);min-width:74px}
@@ -220,7 +241,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .trow .tname{font-weight:600;font-size:13.5px}
   .trow .tsec{font-size:11px;color:var(--dim)}
   .tcol-score{width:38px;text-align:right;flex:none}
-  .tcol-tag{width:46px;text-align:center;flex:none}
+  .tcol-tag{width:92px;text-align:center;flex:none}
   .tcol-rev{width:42px;text-align:right;flex:none}
   .trow .tscore{font-family:ui-monospace,monospace;font-weight:700;font-size:13.5px}
   .ttag{display:inline-block;font-size:9.5px;font-weight:700;padding:3px 5px;border-radius:5px;white-space:nowrap}
@@ -425,6 +446,70 @@ function metricSummary(s){
 function summaryChipsHTML(s){
  return metricSummary(s).map(function(p){return '<span class="sumchip '+p.c+'">'+esc(p.t)+'</span>';}).join("");
 }
+
+/* ═══════════ WEIGHTED FRAMEWORK SCORING (sector-aware, /100, banded) ═══════════ */
+function gradeMetric(val,lo,hi,dir){if(val==null||val===""||isNaN(+val))return null;var n=+val;if(dir==="gt"){if(n>=hi)return 1;if(n<=lo)return 0;return(n-lo)/(hi-lo);}else{if(n<=lo)return 1;if(n>=hi)return 0;return(hi-n)/(hi-lo);}}
+var MODELS={
+ normal:{label:"Normal Business",metrics:[
+  {id:"roce",w:15,grade:"gt",lo:12,hi:22,name:"ROCE / ROIC"},
+  {id:"profitG",w:15,grade:"gt",lo:8,hi:20,name:"Profit Growth"},
+  {id:"roe",w:10,grade:"gt",lo:12,hi:20,name:"ROE"},
+  {id:"valNorm",w:15,grade:"valHist",name:"Valuation vs history"},
+  {id:"salesG",w:10,grade:"gt",lo:6,hi:15,name:"Sales Growth"},
+  {id:"margin",w:10,grade:"gt",lo:10,hi:22,name:"Operating Margin"},
+  {id:"marginTr",w:5,grade:"judge",name:"Margin Trend"},
+  {id:"fcfConv",w:10,grade:"judge",name:"FCF / Cash Conversion"},
+  {id:"debtICR",w:5,grade:"debtICR",name:"Debt / Interest Coverage"},
+  {id:"earnQual",w:5,grade:"judge",name:"Earnings Quality"}]},
+ bank:{label:"Bank / NBFC",metrics:[
+  {id:"roe",w:15,grade:"gt",lo:12,hi:18,name:"ROE"},
+  {id:"roa",w:15,grade:"gt",lo:0.8,hi:1.6,name:"ROA"},
+  {id:"nim",w:15,grade:"gt",lo:2.5,hi:4.5,name:"NIM"},
+  {id:"assetQual",w:10,grade:"gt_gnpa",name:"Asset Quality (GNPA)"},
+  {id:"nimTr",w:10,grade:"judge",name:"NIM Trend"},
+  {id:"loanG",w:10,grade:"gt",lo:8,hi:18,name:"Loan / AUM Growth"},
+  {id:"creditCost",w:5,grade:"lt",lo:0.5,hi:2,name:"Credit Cost"},
+  {id:"car",w:5,grade:"gt",lo:12,hi:16,name:"Capital Adequacy"},
+  {id:"pbHist",w:10,grade:"valPB",name:"P/B vs history"},
+  {id:"pbRoe",w:5,grade:"judge",name:"P/B vs sustainable ROE"}]},
+ cyclical:{label:"Cyclical / Turnaround",metrics:[
+  {id:"normEarn",w:20,grade:"judge",name:"Normalized earnings"},
+  {id:"roce",w:15,grade:"gt",lo:10,hi:20,name:"ROCE / ROIC"},
+  {id:"margin",w:10,grade:"gt",lo:8,hi:18,name:"Operating Margin"},
+  {id:"marginTr",w:10,grade:"judge",name:"Margin Trend"},
+  {id:"de",w:10,grade:"lt",lo:0.5,hi:1.5,name:"Debt / Leverage"},
+  {id:"icr",w:10,grade:"gt",lo:2,hi:5,name:"Interest Coverage"},
+  {id:"ocfJ",w:10,grade:"judge",name:"Operating Cash Flow"},
+  {id:"fcfConv",w:5,grade:"judge",name:"Free Cash Flow"},
+  {id:"salesG",w:5,grade:"gt",lo:5,hi:15,name:"Revenue Growth"},
+  {id:"valNorm",w:5,grade:"valHist",name:"Normalized Valuation"}]}
+};
+var JUDGE_SCALE={excellent:1,good:0.75,mixed:0.5,weak:0.25,poor:0};
+var JUDGE_OPTS=[["excellent","Excellent"],["good","Good"],["mixed","Mixed"],["weak","Weak"],["poor","Poor"]];
+function gradeValHist(m){var hist=(m.peVsHist!=null&&m.peVsHist!==""&&!isNaN(+m.peVsHist))?+m.peVsHist:null;var sec=(m.peVsSector!=null&&m.peVsSector!==""&&!isNaN(+m.peVsSector))?+m.peVsSector:null;if(hist==null&&sec==null)return null;var basis;if(hist==null)basis=sec;else if(sec==null)basis=hist;else{var d=(hist<0)!==(sec<0);basis=d?hist:hist*0.7+sec*0.3;}if(basis<=-25)return 1;if(basis>=25)return 0;return(25-basis)/50;}
+function gradeValPB(m){var pb=(m.pbVsHist!=null&&m.pbVsHist!==""&&!isNaN(+m.pbVsHist))?+m.pbVsHist:null;if(pb==null)return null;if(pb<=-25)return 1;if(pb>=25)return 0;return(25-pb)/50;}
+function scoreOne(md,m,judge){switch(md.grade){
+ case "gt":case "lt":return gradeMetric(m[md.id],md.lo,md.hi,md.grade);
+ case "gt_gnpa":return gradeMetric(m[md.id],1.5,5,"lt");
+ case "valHist":return gradeValHist(m);
+ case "valPB":return gradeValPB(m);
+ case "judge":return(judge[md.id]!=null&&judge[md.id]!=="")?JUDGE_SCALE[judge[md.id]]:null;
+ case "debtICR":{var de=gradeMetric(m.de,0.5,1.5,"lt");var ic=gradeMetric(m.icr,2,5,"gt");var p=[de,ic].filter(function(x){return x!=null;});if(!p.length)return null;return p.reduce(function(a,b){return a+b;},0)/p.length;}
+ default:return null;}}
+function frameworkScore(s){var type=s.bizType||"normal";var model=MODELS[type]||MODELS.normal;var m=s.metrics||{};var judge=s.judge||{};var earned=0,possible=0,filled=0,unfilled=0,rows=[];model.metrics.forEach(function(md){var frac=scoreOne(md,m,judge);if(frac==null){unfilled++;rows.push({id:md.id,name:md.name,w:md.w,pts:null});return;}filled++;var pts=frac*md.w;earned+=pts;possible+=md.w;rows.push({id:md.id,name:md.name,w:md.w,pts:pts,frac:frac});});return{type:type,model:model,score:Math.round(earned),earned:earned,filledWeight:possible,filled:filled,unfilled:unfilled,rows:rows};}
+function scoreBand(sc){if(sc>=85)return{l:"STRONG BUY",c:"em"};if(sc>=75)return{l:"BUY",c:"em"};if(sc>=65)return{l:"ACCUMULATE",c:"am"};if(sc>=55)return{l:"HOLD",c:"am"};if(sc>=45)return{l:"REDUCE",c:"rd"};return{l:"AVOID",c:"rd"};}
+var BAND_ORDER=["AVOID","REDUCE","HOLD","ACCUMULATE","BUY","STRONG BUY"];
+var BANDS={AVOID:{l:"AVOID",c:"rd"},REDUCE:{l:"REDUCE",c:"rd"},HOLD:{l:"HOLD",c:"am"},ACCUMULATE:{l:"ACCUMULATE",c:"am"},BUY:{l:"BUY",c:"em"},"STRONG BUY":{l:"STRONG BUY",c:"em"}};
+function capMin(cur,next){if(cur==null)return next;return BAND_ORDER.indexOf(next)<BAND_ORDER.indexOf(cur)?next:cur;}
+function applyOverrides(s,rawBand){var j=s.judge||{};var cap=null,reasons=[];
+ if(j.earnQual==="poor"||j.earnQual==="weak"){cap="ACCUMULATE";reasons.push("Earnings quality low — capped until it normalizes");}
+ if(j.governance==="poor"){cap=capMin(cap,"ACCUMULATE");reasons.push("Governance concerning — no Buy regardless of score");}
+ if(j.moat==="weak"||j.moat==="poor"){cap=capMin(cap,"ACCUMULATE");reasons.push("Business quality weak — cheapness alone isn't a Buy");}
+ if(cap==null)return{band:rawBand,capped:false};
+ if(BAND_ORDER.indexOf(rawBand.l)>BAND_ORDER.indexOf(cap))return{band:BANDS[cap],capped:true,reason:reasons.join(" · ")};
+ return{band:rawBand,capped:false};}
+function finalBand(s){var fs=frameworkScore(s);var raw=scoreBand(fs.score);var fin=applyOverrides(s,raw);return{fs:fs,raw:raw,band:fin.band,capped:fin.capped,reason:fin.reason};}
+
 function evalF(f,val,bank){
  if(bank&&f.bankSkip)return"skip";
  if(f.onlyBank&&!bank)return"skip";
@@ -747,7 +832,7 @@ function tabbarHTML(){
 function meterHTML(r){return '<div class="meter">'+r.filter(function(x){return x!=="skip";}).map(function(x){return '<span class="pip '+(x==="pass"?"p":x==="fail"?"f":"u")+'"></span>';}).join("")+'</div>';}
 
 function renderDash(){
- var sc=stocks.map(function(s){return{s:s,x:score(s)};}).sort(function(a,b){return b.x.p-a.x.p;});
+ var sc=stocks.map(function(s){return{s:s,x:{p:finalBand(s).fs.score}};}).sort(function(a,b){return b.x.p-a.x.p;});
  var strong=sc.filter(function(o){return o.x.p>=10;}).length;
  var watch=sc.filter(function(o){return o.x.p>=7&&o.x.p<10;}).length;
  var exit=sc.filter(function(o){return o.x.p<7;}).length;
@@ -769,7 +854,7 @@ function renderDash(){
  if(!stocks.length){
   left+='<div class="empty">No stocks. Tap +Add to start.</div>';
  }else{
-  left+='<div class="theadrow"><span style="flex:1">Stock</span><span class="tcol-score">Score</span><span class="tcol-tag">Call</span><span class="tcol-rev">Reviewed</span></div>';
+  left+='<div class="theadrow"><span style="flex:1">Stock</span><span class="tcol-score">Score</span><span class="tcol-tag">Band</span><span class="tcol-rev">Reviewed</span></div>';
   sc.forEach(function(o){left+=trowHTML(o.s,o.x);});
  }
  left+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice. Tap any row for the full breakdown.</div>';
@@ -828,7 +913,7 @@ function renderDash(){
 /* One compact row per stock: name/sector, score, short buy call, review status.
    Tap anywhere on the row to open the full filter breakdown (same as before). */
 function trowHTML(s,x){
- var v=verd(x.p,x.max),bt=buyTag(x.p,valFromMetrics(s));
+ var fb=finalBand(s);
  var d=daysSince(s.lastUpdated);
  var rev=d===null?"New":d>90?"Due":d+"d";
  var revCls=(d===null||d>90)?"rd":"";
@@ -836,11 +921,11 @@ function trowHTML(s,x){
  return '<div class="trow" onclick="editStock(\''+s.id+'\')">'
   +'<div class="tn"><div class="tnline">'
     +'<span class="tname">'+esc(s.name||s.ticker)+(flags>0?' <span style="color:var(--rd)" title="'+flags+' quality concern'+(flags>1?"s":"")+'">⚠</span>':'')+(s.notes&&s.notes.trim()?' <span class="noteflag" title="'+esc(s.notes).replace(/"/g,"&quot;")+'">🗒</span>':'')+'</span>'
-    +'<span class="tsec">'+esc(s.sector||"")+(s.isBank?" · Bank":"")+(s.cap?" · "+s.cap+" cap":"")+'</span>'
+    +'<span class="tsec">'+esc(s.sector||"")+(s.bizType==="bank"?" · Bank":s.bizType==="cyclical"?" · Cyclical":"")+(s.cap?" · "+s.cap+" cap":"")+'</span>'
     +'<span class="sumline">'+summaryChipsHTML(s)+'</span>'
   +'</div></div>'
-  +'<span class="tcol-score"><span class="tscore '+v.c+'">'+x.p+'</span></span>'
-  +'<span class="tcol-tag"><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></span>'
+  +'<span class="tcol-score"><span class="tscore '+fb.band.c+'">'+fb.fs.score+'</span></span>'
+  +'<span class="tcol-tag"><span class="ttag '+fb.band.c+'">'+fb.band.l+(fb.capped?" ⚠":"")+'</span></span>'
   +'<span class="tcol-rev"><span class="trev '+revCls+'">'+rev+'</span></span>'
   +'</div>';
 }
@@ -1163,7 +1248,7 @@ function renderPortfolio(){
    var linked=cls==="Stock"?stocks.filter(function(s){return (s.ticker||"").toUpperCase()===x.symbol.toUpperCase();})[0]:null;
    h+='<div class="prow">'
     +'<div class="pmain">'
-      +'<div class="pnm">'+esc(x.symbol)+(linked?' <span class="plink" onclick="editStock(\''+linked.id+'\')">◷ score '+score(linked).p+'/'+score(linked).max+'</span>':'')+' <span class="pedit" onclick="editHolding(\''+(x.isin||x.symbol)+'\')" title="Edit quantity / cost / price">✎</span></div>'
+      +'<div class="pnm">'+esc(x.symbol)+(linked?' <span class="plink" onclick="editStock(\''+linked.id+'\')">◷ '+finalBand(linked).fs.score+'/100</span>':'')+' <span class="pedit" onclick="editHolding(\''+(x.isin||x.symbol)+'\')" title="Edit quantity / cost / price">✎</span></div>'
       +'<div class="psub">'+fmtI(x.qty*1)+' × avg ₹'+x.avg.toFixed(2)+' · invested ₹'+fmtI(x.invested)+'</div>'
       +(peditKey===(x.isin||x.symbol)?holdingEditHTML(x):'')
     +'</div>'
@@ -1306,11 +1391,11 @@ function renderCompare(){
  stocks.slice()
   .filter(function(s){return (!cmpSector||s.sector===cmpSector);})
   .sort(function(a,b){return(a.name||a.ticker||"").localeCompare(b.name||b.ticker||"");}).forEach(function(s){
-  var x=score(s),checked=compareSel.indexOf(s.id)>-1;
+  var fbp=finalBand(s),checked=compareSel.indexOf(s.id)>-1;
   picker+='<div class="cksel" onclick="toggleCompare(\''+s.id+'\')">'
    +'<input type="checkbox" '+(checked?"checked":"")+' onclick="event.stopPropagation();toggleCompare(\''+s.id+'\')">'
    +'<span class="cn">'+esc(s.name||s.ticker)+(s.ticker?' <span class="mono" style="color:var(--dim);font-weight:400">'+esc(s.ticker)+'</span>':'')+'</span>'
-   +'<span class="cscore">'+x.p+'/'+x.max+'</span>'
+   +'<span class="cscore">'+fbp.fs.score+'</span>'
    +'</div>';
  });
  picker+='</div>';
@@ -1343,9 +1428,8 @@ function compareTableHTML(sel){
  sel.forEach(function(s){h+='<th>'+esc(s.name||s.ticker)+(s.ticker?'<br><span style="font-weight:400;color:var(--dim)">'+esc(s.ticker)+'</span>':'')+'</th>';});
  h+='</tr></thead><tbody>';
 
- h+='<tr><td class="lbl">Score</td>'+sel.map(function(s){var x=score(s),v=verd(x.p,x.max);return'<td><span class="cmpv '+v.c+'" style="font-weight:700">'+x.p+'/'+x.max+'</span></td>';}).join('')+'</tr>';
- h+='<tr><td class="lbl">Verdict</td>'+sel.map(function(s){var v=verd(score(s).p);return'<td><span class="'+v.c+'" style="font-weight:600">'+v.l+'</span></td>';}).join('')+'</tr>';
- h+='<tr><td class="lbl">Buy call</td>'+sel.map(function(s){var x=score(s),bt=buyTag(x.p,valFromMetrics(s));return'<td><span class="ttag '+bt.c+'">'+buyTagShort(bt.l)+'</span></td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Score</td>'+sel.map(function(s){var fb=finalBand(s);return'<td><span class="cmpv '+fb.band.c+'" style="font-weight:700">'+fb.fs.score+'/100</span></td>';}).join('')+'</tr>';
+ h+='<tr><td class="lbl">Band</td>'+sel.map(function(s){var fb=finalBand(s);return'<td><span class="'+fb.band.c+'" style="font-weight:600">'+fb.band.l+(fb.capped?" ⚠":"")+'</span></td>';}).join('')+'</tr>';
  h+='<tr><td class="lbl">Sector</td>'+sel.map(function(s){return'<td style="font-size:12px;color:var(--mut)">'+(s.sector?esc(s.sector):"—")+'</td>';}).join('')+'</tr>';
  h+='<tr><td class="lbl">Market cap</td>'+sel.map(function(s){return'<td><span class="capbadge cap-'+(s.cap||"none").toLowerCase()+'">'+(s.cap||"—")+'</span></td>';}).join('')+'</tr>';
 
@@ -1422,6 +1506,11 @@ function renderEditor(){
   +(isExisting?'<button class="lnk r" onclick="delStock(\''+s.id+'\')">Delete</button>':'')
   +'<button class="lnk" style="color:var(--mut)" onclick="cancelEdit()">Cancel</button>'
   +'</div></div>';
+ if(isExisting && !s.bizType){
+  h+='<div class="migbanner">⚡ New: this stock needs a <b>business type</b> for the updated weighted scoring. '
+    +(s.isBank?'It was marked Bank before — confirm below.':'Pick Normal, Bank/NBFC, or Cyclical below.')
+    +' Until you pick, it scores as Normal.</div>';
+ }
  h+='<div style="margin-top:14px"><input type="text" id="f_name" placeholder="Company name" value="'+esc(s.name)+'" oninput="setF(\'name\',this.value)"></div>';
  h+='<div class="row" style="margin-top:8px"><input type="text" id="f_ticker" placeholder="Ticker" value="'+esc(s.ticker)+'" oninput="setF(\'ticker\',this.value.toUpperCase())">'
   +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)">'
@@ -1430,9 +1519,13 @@ function renderEditor(){
   +["Large","Mid","Small"].map(function(c){return '<button class="capchip '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
   +'</div></div>';
  h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 0 2px">Value = current holding value (shares × today\'s price), not what you originally invested — the sector warning needs today\'s actual exposure. Same unit for every stock; leave blank to skip.</div>';
- h+='<label class="ann" style="margin:14px 0"><input type="checkbox" class="cbx" '+(s.isBank?"checked":"")+' onchange="setBank(this.checked)"> Bank / NBFC — swaps ROCE→ROA, D/E→CAR, EBITDA→NIM; skips interest coverage &amp; OCF</label>';
+ h+='<div class="biztype"><span class="caplbl">Business type</span><div class="capchips">'
+  +[["normal","Normal"],["bank","Bank / NBFC"],["cyclical","Cyclical"]].map(function(t){return '<button class="capchip '+((s.bizType||"normal")===t[0]?"on":"")+'" onclick="setBizType(\''+t[0]+'\')">'+t[1]+'</button>';}).join("")
+  +'</div></div>';
+ h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 10px 2px">Normal = most companies. Bank/NBFC = lenders (uses ROA, NIM, GNPA, CAR). Cyclical = commodity/turnaround (uses normalized earnings). This sets which weighted model scores the stock.</div>';
  h+='<div class="editsum" id="editorSummary">'+summaryChipsHTML(s)+'</div>';
  h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
+ h+=frameworkSectionHTML(s);
 
  CATS.forEach(function(cat){
   h+='<div class="cat">'+cat+'</div>';
@@ -1486,8 +1579,7 @@ function renderEditor(){
   if(qcalcShown&&openCalc[q.id])h+=calcHTML(q.id,qcalc,s.metrics[q.id+"__raw"]||{});
   h+='</div>';
  });
- h+='<div class="live"><div><div id="liveMeter">'+meterHTML(x.r)+'</div><div class="'+buyTag(x.p,valFromMetrics(s)).c+'" style="margin-top:8px;font-size:13px" id="liveAction"><b>'+buyTag(x.p,valFromMetrics(s)).l+'</b> — '+action(x.p,valFromMetrics(s))+'</div></div>'
-  +'<div style="text-align:right"><div class="score '+v.c+'" id="liveScore">'+x.p+'<span>/'+x.max+'</span></div></div></div>';
+ h+='<div id="bandCardWrap">'+bandCardHTML(s)+'</div>';
  h+='<div class="notesblock"><label class="noteslbl">Notes <span class="sub">— your thesis, why you bought, what to watch</span></label>'
    +'<textarea id="f_notes" class="notesarea" placeholder="e.g. Bought for the moat + rising ROE. Watch debt if they expand. Revisit if P/E crosses its 5yr median." oninput="setF(\'notes\',this.value)">'+esc(s.notes||"")+'</textarea></div>';
  h+='<button class="btn" style="width:100%" onclick="saveDraft()">Save &amp; timestamp</button>';
@@ -1547,6 +1639,89 @@ function setM(id,val){
 }
 function setBool(id,val){draft.metrics[id]=val;document.getElementById("tri_"+id).outerHTML=triHTML(id,val);refreshLive();}
 function setBank(c){draft.isBank=c;renderEditor();}
+function setBizType(t){
+ draft.bizType=t;
+ draft.isBank=(t==="bank");   // keep legacy bank-swap logic in sync for shared metric inputs
+ renderEditor();
+}
+function setJudge(k,v){ if(!draft.judge)draft.judge={}; draft.judge[k]=v; refreshLive(); }
+function setMetricNum(k,v){ draft.metrics[k]=v; refreshLive(); }
+
+/* The framework section: business-type-specific NUMERIC fields not already in the
+   generic metric list, plus the optional JUDGMENT dropdowns. Judgment fields left
+   blank stay "not assessed" — they score nothing and don't trigger override caps. */
+function judgeSelect(k,label,help){
+ var cur=(draft.judge&&draft.judge[k])||"";
+ var opts='<option value="">Not assessed</option>'+JUDGE_OPTS.map(function(o){return '<option value="'+o[0]+'"'+(cur===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");
+ return '<div class="jrow"><div class="jlbl">'+label+(help?'<div class="sub">'+help+'</div>':'')+'</div>'
+  +'<select class="jsel" onchange="setJudge(\''+k+'\',this.value)">'+opts+'</select></div>';
+}
+function numRow(k,label,unit,help){
+ var cur=(draft.metrics&&draft.metrics[k]!=null)?draft.metrics[k]:"";
+ return '<div class="jrow"><div class="jlbl">'+label+(help?'<div class="sub">'+help+'</div>':'')+'</div>'
+  +'<div class="numwrap"><input class="num" type="number" step="any" value="'+esc(String(cur))+'" oninput="setMetricNum(\''+k+'\',this.value)" onblur="refreshLive()">'+(unit?'<span class="nunit">'+unit+'</span>':'')+'</div></div>';
+}
+/* The band card shown in the editor: weighted /100, the final band (after override
+   caps), the reason if capped, an "unvetted" note if judgment fields are blank, and
+   the full weighted metric breakdown. */
+function bandCardHTML(s){
+ var r=finalBand(s);
+ var fs=r.fs, band=r.band;
+ var bg=band.c==="em"?"rgba(21,128,61,.10)":band.c==="am"?"rgba(180,83,9,.10)":"rgba(220,38,38,.10)";
+ var h='<div class="bandcard" style="background:'+bg+'">'
+  +'<div class="bandscore">FUNDAMENTAL BAND · '+fs.model.label+'</div>'
+  +'<div class="bandbig '+band.c+'">'+band.l+'</div>'
+  +'<div class="bandscore">Weighted score '+fs.score+'/100'+(fs.unfilled>0?' · '+fs.unfilled+' metric'+(fs.unfilled>1?"s":"")+' not filled':'')+'</div>';
+ if(r.capped)h+='<div class="ovbox">⚠ Capped from '+r.raw.l+' → '+band.l+': '+r.reason+'</div>';
+ // Unvetted note: has a decent score but key judgment fields blank
+ var j=s.judge||{};
+ var keyJudge=(s.bizType==="bank")?["earnQual","governance"]:["earnQual","governance","moat"];
+ var missing=keyJudge.filter(function(k){return !j[k];});
+ if(missing.length&&fs.score>=55&&!r.capped)
+  h+='<div class="unvetted">Rating unvetted — '+missing.map(function(k){return k==="earnQual"?"earnings quality":k==="governance"?"governance":"moat";}).join(", ")+' not yet assessed. The band reflects the numbers only; the risk overrides can\'t fire until you assess these.</div>';
+ // Breakdown
+ h+='<div style="margin-top:12px;text-align:left">';
+ fs.rows.forEach(function(row){
+  var c=row.pts==null?"":(row.frac>=0.75?"em":row.frac>=0.4?"am":"rd");
+  var pct=row.pts==null?0:(row.frac*100);
+  var col=c==="em"?"#22c55e":c==="am"?"#e0a83d":c==="rd"?"#ef4444":"var(--dim)";
+  h+='<div class="fwrow"><span class="fwname">'+row.name+'</span>'
+   +'<span class="fwwt">'+row.w+'%</span>'
+   +'<span class="fwbar"><span class="fwbarfill" style="width:'+pct.toFixed(0)+'%;background:'+col+'"></span></span>'
+   +'<span class="fwpts '+c+'">'+(row.pts==null?'<span style="color:var(--dim)">—</span>':row.pts.toFixed(1)+'/'+row.w)+'</span></div>';
+ });
+ h+='</div></div>';
+ return h;
+}
+function frameworkSectionHTML(s){
+ var t=s.bizType||"normal";
+ var h='<div class="fwsec"><div class="fwtitle">Framework metrics <span class="sub">— weighted '+(MODELS[t].label)+' model</span></div>';
+ if(t==="bank"){
+  h+='<div class="cat">Bank fundamentals</div>';
+  h+=numRow("roa","Return on Assets (ROA)","%","Net profit ÷ total assets. >1.5% strong.");
+  h+=numRow("nim","Net Interest Margin (NIM)","%","From the bank\'s investor presentation. >3.5% strong.");
+  h+=numRow("assetQual","Gross NPA (GNPA)","%","Lower is better. <1.5% clean, >5% weak.");
+  h+=numRow("loanG","Loan / AUM growth","%","Advances growth YoY.");
+  h+=numRow("creditCost","Credit cost","%","Provisions ÷ advances. <0.5% good, >2% weak.");
+  h+=numRow("car","Capital adequacy (CAR)","%","Cushion for losses. >13% comfortable.");
+ } else if(t==="cyclical"){
+  h+='<div class="cat">Cyclical inputs</div>';
+  h+='<div class="sub" style="margin:0 2px 8px">Normalized earnings and cash-flow are judgment calls — assess them below.</div>';
+ }
+ // Judgment inputs (optional) — apply to all types, with type-specific ones added
+ h+='<div class="cat">Judgment <span class="sub" style="font-weight:400">— optional; blank = not assessed, no cap</span></div>';
+ if(t==="cyclical")h+=judgeSelect("normEarn","Normalized / mid-cycle earnings","Where are we in the cycle? Are current earnings sustainable or peak/trough?");
+ h+=judgeSelect("earnQual","Earnings quality","Cash-backed & recurring? Or one-time gains / aggressive accounting?");
+ h+=judgeSelect("marginTr",(t==="bank"?"NIM trend":"Margin trend"),"Expanding, stable, or compressing?");
+ if(t!=="bank")h+=judgeSelect("fcfConv","FCF / cash conversion","Does cash flow back the reported profit?");
+ if(t==="cyclical")h+=judgeSelect("ocfJ","Operating cash flow","Positive & stable through the cycle?");
+ if(t==="bank")h+=judgeSelect("nimTr","NIM trend","Direction of net interest margin.");
+ if(t==="bank")h+=judgeSelect("pbRoe","P/B vs sustainable ROE","Is the P/B justified by the ROE it earns?");
+ h+=judgeSelect("moat","Business quality / moat","Durable competitive advantage? Pricing power?");
+ h+=judgeSelect("governance","Governance","Promoter integrity, related-party deals, pledging, auditor changes.");
+ h+='</div>';
+ return h;
+}
 function setVal(){/* valuation is now derived from P/E metrics — manual picker removed */}
 function toggleCalc(id){openCalc[id]=!openCalc[id];renderEditor();}
 function toggleInfo(id){openInfo[id]=!openInfo[id];renderEditor();}
@@ -1635,6 +1810,7 @@ function refreshLive(){
  var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,valFromMetrics(draft));la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
  var vw=document.getElementById("valboxWrap");if(vw)vw.innerHTML=valboxHTML(draft);
  var es=document.getElementById("editorSummary");if(es)es.innerHTML=summaryChipsHTML(draft);
+ var bc=document.getElementById("bandCardWrap");if(bc)bc.innerHTML=bandCardHTML(draft);
 }
 function saveDraft(){
  if(!draft.name&&!draft.ticker){alert("Add a name or ticker first.");return;}
