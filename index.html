@@ -154,6 +154,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .fwbarfill{height:100%}
   .fwpts{width:52px;text-align:right;font-size:11.5px;font-weight:600}
   .migbanner{background:rgba(180,83,9,.10);border:1px solid rgba(180,83,9,.28);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--am);margin-top:12px}
+  .idrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .setuprow{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+  .setuprow .hint{font-size:11px;color:var(--dim)}
+  .topgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  @media(max-width:560px){.topgrid{grid-template-columns:1fr}}
+  .bandcall{border-radius:12px;padding:14px;text-align:center;height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
   .brandmark svg{border-radius:7px;display:block}
   .caprow{display:flex;align-items:center;gap:10px;margin-top:8px}
   .caplbl{font-size:12px;color:var(--mut);min-width:74px}
@@ -1536,20 +1542,22 @@ function renderEditor(){
     +(s.isBank?'It was marked Bank before — confirm below.':'Pick Normal, Bank/NBFC, or Cyclical below.')
     +' Until you pick, it scores as Normal.</div>';
  }
- h+='<div style="margin-top:14px"><input type="text" id="f_name" placeholder="Company name" value="'+esc(s.name)+'" oninput="setF(\'name\',this.value)"></div>';
- h+='<div class="row" style="margin-top:8px"><input type="text" id="f_ticker" placeholder="Ticker" value="'+esc(s.ticker)+'" oninput="setF(\'ticker\',this.value.toUpperCase())">'
-  +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)">'
-  +'<input class="num" type="number" step="any" id="f_weight" placeholder="Value" value="'+(s.weight!=null?s.weight:"")+'" oninput="setF(\'weight\',this.value)" style="max-width:80px"></div>';
- h+='<div class="caprow"><span class="caplbl">Market cap</span><div class="capchips">'
+ // Compact identity row: name / ticker / sector / value on one line (wraps on mobile)
+ h+='<div class="idrow">'
+   +'<input type="text" id="f_name" placeholder="Company name" value="'+esc(s.name)+'" oninput="setF(\'name\',this.value)" style="flex:3;min-width:150px">'
+   +'<input type="text" id="f_ticker" placeholder="Ticker" value="'+esc(s.ticker)+'" oninput="setF(\'ticker\',this.value.toUpperCase())" style="flex:2;min-width:90px">'
+   +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)" style="flex:2;min-width:90px">'
+   +'<input class="num" type="number" step="any" id="f_weight" placeholder="Value" value="'+(s.weight!=null?s.weight:"")+'" oninput="setF(\'weight\',this.value)" style="flex:1;min-width:70px">'
+   +'</div>';
+ h+='<div class="setuprow"><span class="caplbl">Market cap</span><div class="capchips">'
   +["Large","Mid","Small"].map(function(c){return '<button class="capchip '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
-  +'</div></div>';
- h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 0 2px">Value = current holding value (shares × today\'s price), not what you originally invested — the sector warning needs today\'s actual exposure. Same unit for every stock; leave blank to skip.</div>';
- h+='<div class="biztype"><span class="caplbl">Business type</span><div class="capchips">'
+  +'</div><span class="hint">current holding value; blank to skip</span></div>';
+ h+='<div class="setuprow"><span class="caplbl">Business type</span><div class="capchips">'
   +[["normal","Normal"],["bank","Bank / NBFC"],["cyclical","Cyclical"]].map(function(t){return '<button class="capchip '+((s.bizType||"normal")===t[0]?"on":"")+'" onclick="setBizType(\''+t[0]+'\')">'+t[1]+'</button>';}).join("")
-  +'</div></div>';
- h+='<div style="font-size:11px;color:var(--dim);margin:4px 0 10px 2px">Normal = most companies. Bank/NBFC = lenders (uses ROA, NIM, GNPA, CAR). Cyclical = commodity/turnaround (uses normalized earnings). This sets which weighted model scores the stock.</div>';
+  +'</div><span class="hint">sets the weighted model</span></div>';
  h+='<div class="editsum" id="editorSummary">'+summaryChipsHTML(s)+'</div>';
- h+='<div id="valboxWrap">'+valboxHTML(s)+'</div>';
+ // Valuation box + band call side by side at the top
+ h+='<div class="topgrid"><div id="valboxWrap">'+valboxHTML(s)+'</div><div id="bandCallWrap">'+bandCallHTML(s)+'</div></div>';
  h+=frameworkSectionHTML(s);
 
  CATS.forEach(function(cat){
@@ -1604,7 +1612,7 @@ function renderEditor(){
   if(qcalcShown&&openCalc[q.id])h+=calcHTML(q.id,qcalc,s.metrics[q.id+"__raw"]||{});
   h+='</div>';
  });
- h+='<div id="bandCardWrap">'+bandCardHTML(s)+'</div>';
+ h+='<div id="bandCardWrap">'+bandBreakdownHTML(s)+'</div>';
  h+='<div class="notesblock"><label class="noteslbl">Notes <span class="sub">— your thesis, why you bought, what to watch</span></label>'
    +'<textarea id="f_notes" class="notesarea" placeholder="e.g. Bought for the moat + rising ROE. Watch debt if they expand. Revisit if P/E crosses its 5yr median." oninput="setF(\'notes\',this.value)">'+esc(s.notes||"")+'</textarea></div>';
  h+='<button class="btn" style="width:100%" onclick="saveDraft()">Save &amp; timestamp</button>';
@@ -1709,23 +1717,28 @@ function numRow(k,label,unit,help){
 /* The band card shown in the editor: weighted /100, the final band (after override
    caps), the reason if capped, an "unvetted" note if judgment fields are blank, and
    the full weighted metric breakdown. */
-function bandCardHTML(s){
+function bandCallHTML(s){
  var r=finalBand(s);
  var fs=r.fs, band=r.band;
  var bg=band.c==="em"?"rgba(21,128,61,.10)":band.c==="am"?"rgba(180,83,9,.10)":"rgba(220,38,38,.10)";
- var h='<div class="bandcard" style="background:'+bg+'">'
-  +'<div class="bandscore">FUNDAMENTAL BAND · '+fs.model.label+'</div>'
+ var h='<div class="bandcall" style="background:'+bg+'">'
+  +'<div class="bandscore">FUNDAMENTAL BAND · /100</div>'
   +'<div class="bandbig '+band.c+'">'+band.l+'</div>'
-  +'<div class="bandscore">Weighted score '+fs.score+'/100'+(fs.unfilled>0?' · '+fs.unfilled+' metric'+(fs.unfilled>1?"s":"")+' not filled':'')+'</div>';
- if(r.capped)h+='<div class="ovbox">⚠ Capped from '+r.raw.l+' → '+band.l+': '+r.reason+'</div>';
- // Unvetted note: has a decent score but key judgment fields blank
+  +'<div class="bandscore">Score '+fs.score+'/100'+(fs.unfilled>0?' · '+fs.unfilled+' not filled':'')+(r.capped?' · capped':'')+'</div>';
+ if(r.capped)h+='<div class="ovbox">⚠ '+r.reason+'</div>';
  var j=s.judge||{};
  var keyJudge=(s.bizType==="bank")?["earnQual","governance"]:["earnQual","governance","moat"];
  var missing=keyJudge.filter(function(k){return !j[k];});
  if(missing.length&&fs.score>=55&&!r.capped)
-  h+='<div class="unvetted">Rating unvetted — '+missing.map(function(k){return k==="earnQual"?"earnings quality":k==="governance"?"governance":"moat";}).join(", ")+' not yet assessed. The band reflects the numbers only; the risk overrides can\'t fire until you assess these.</div>';
- // Breakdown
- h+='<div style="margin-top:12px;text-align:left">';
+  h+='<div class="unvetted">Unvetted — '+missing.map(function(k){return k==="earnQual"?"earnings quality":k==="governance"?"governance":"moat";}).join(", ")+' not assessed.</div>';
+ h+='</div>';
+ return h;
+}
+/* The detailed weighted breakdown — shown at the BOTTOM of the editor. */
+function bandBreakdownHTML(s){
+ var fs=finalBand(s).fs;
+ var h='<div class="fwtitle">Detailed scoring <span class="sub">— weighted '+fs.model.label+' breakdown</span></div>';
+ h+='<div class="bandcard" style="background:var(--card2)">';
  fs.rows.forEach(function(row){
   var c=row.pts==null?"":(row.frac>=0.75?"em":row.frac>=0.4?"am":"rd");
   var pct=row.pts==null?0:(row.frac*100);
@@ -1735,7 +1748,8 @@ function bandCardHTML(s){
    +'<span class="fwbar"><span class="fwbarfill" style="width:'+pct.toFixed(0)+'%;background:'+col+'"></span></span>'
    +'<span class="fwpts '+c+'">'+(row.pts==null?'<span style="color:var(--dim)">—</span>':row.pts.toFixed(1)+'/'+row.w)+'</span></div>';
  });
- h+='</div></div>';
+ h+='<div class="fwrow" style="border-top:1px solid var(--line);margin-top:4px;padding-top:8px;font-weight:700"><span class="fwname">Weighted total</span><span class="fwwt"></span><span class="fwbar"></span><span class="fwpts">'+fs.score+'/100</span></div>';
+ h+='</div>';
  return h;
 }
 function frameworkSectionHTML(s){
@@ -1855,7 +1869,8 @@ function refreshLive(){
  var la=document.getElementById("liveAction");if(la){la.innerHTML="<b>"+bt.l+"</b> — "+action(x.p,valFromMetrics(draft));la.className=bt.c;la.style.marginTop="8px";la.style.fontSize="13px";}
  var vw=document.getElementById("valboxWrap");if(vw)vw.innerHTML=valboxHTML(draft);
  var es=document.getElementById("editorSummary");if(es)es.innerHTML=summaryChipsHTML(draft);
- var bc=document.getElementById("bandCardWrap");if(bc)bc.innerHTML=bandCardHTML(draft);
+ var bc=document.getElementById("bandCardWrap");if(bc)bc.innerHTML=bandBreakdownHTML(draft);
+ var bcall=document.getElementById("bandCallWrap");if(bcall)bcall.innerHTML=bandCallHTML(draft);
 }
 function saveDraft(){
  if(!draft.name&&!draft.ticker){alert("Add a name or ticker first.");return;}
