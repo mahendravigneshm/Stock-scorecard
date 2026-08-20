@@ -501,10 +501,35 @@ function scoreBand(sc){if(sc>=85)return{l:"STRONG BUY",c:"em"};if(sc>=75)return{
 var BAND_ORDER=["AVOID","REDUCE","HOLD","ACCUMULATE","BUY","STRONG BUY"];
 var BANDS={AVOID:{l:"AVOID",c:"rd"},REDUCE:{l:"REDUCE",c:"rd"},HOLD:{l:"HOLD",c:"am"},ACCUMULATE:{l:"ACCUMULATE",c:"am"},BUY:{l:"BUY",c:"em"},"STRONG BUY":{l:"STRONG BUY",c:"em"}};
 function capMin(cur,next){if(cur==null)return next;return BAND_ORDER.indexOf(next)<BAND_ORDER.indexOf(cur)?next:cur;}
+function valBasis(s){
+ // How far above/below its own valuation history — history dominates sector.
+ // For banks, use P/B; for others, P/E. Negative = cheaper, positive = pricier.
+ var m=s.metrics||{};
+ if(s.bizType==="bank"){
+  if(m.pbVsHist==null||m.pbVsHist===""||isNaN(+m.pbVsHist))return null;
+  return +m.pbVsHist;
+ }
+ var hist=(m.peVsHist!=null&&m.peVsHist!==""&&!isNaN(+m.peVsHist))?+m.peVsHist:null;
+ var sec=(m.peVsSector!=null&&m.peVsSector!==""&&!isNaN(+m.peVsSector))?+m.peVsSector:null;
+ if(hist==null&&sec==null)return null;
+ if(hist==null)return sec;
+ if(sec==null)return hist;
+ var d=(hist<0)!==(sec<0);
+ return d?hist:hist*0.7+sec*0.3;   // disagree → history wins; agree → history-weighted
+}
 function applyOverrides(s,rawBand){var j=s.judge||{};var cap=null,reasons=[];
  if(j.earnQual==="poor"||j.earnQual==="weak"){cap="ACCUMULATE";reasons.push("Earnings quality low — capped until it normalizes");}
  if(j.governance==="poor"){cap=capMin(cap,"ACCUMULATE");reasons.push("Governance concerning — no Buy regardless of score");}
  if(j.moat==="weak"||j.moat==="poor"){cap=capMin(cap,"ACCUMULATE");reasons.push("Business quality weak — cheapness alone isn't a Buy");}
+ // Valuation cap: a great business is only a BUY at a sensible price. Being expensive
+ // vs its OWN history caps the band no matter how strong the fundamentals — you can't
+ // buy well at a bad price. (Uses P/E for most, P/B for banks; history dominates sector.)
+ var vb=valBasis(s);
+ if(vb!=null){
+  var anchor=(s.bizType==="bank")?"P/B":"P/E";
+  if(vb>=15){cap=capMin(cap,"HOLD");reasons.push(anchor+" ~"+Math.round(vb)+"% above its own history — good business, but too expensive to buy here");}
+  else if(vb>=5){cap=capMin(cap,"ACCUMULATE");reasons.push(anchor+" above its own history — accumulate on dips, don't chase");}
+ }
  if(cap==null)return{band:rawBand,capped:false};
  if(BAND_ORDER.indexOf(rawBand.l)>BAND_ORDER.indexOf(cap))return{band:BANDS[cap],capped:true,reason:reasons.join(" · ")};
  return{band:rawBand,capped:false};}
@@ -1650,11 +1675,31 @@ function setMetricNum(k,v){ draft.metrics[k]=v; refreshLive(); }
 /* The framework section: business-type-specific NUMERIC fields not already in the
    generic metric list, plus the optional JUDGMENT dropdowns. Judgment fields left
    blank stay "not assessed" — they score nothing and don't trigger override caps. */
+
+/* "How to rate" guidance shown by the ℹ button beside each judgment field. */
+var JUDGE_GUIDE={
+ earnQual:"<b>Earnings quality — is the profit real & repeatable?</b><br><b>Where:</b> Screener → Cash Flow tab. Compare 'Cash from Operating Activity' vs Net Profit over 5 yrs; also check 'Other Income' as a share of profit in the P&L.<br><b>Excellent:</b> operating cash flow ≥ net profit consistently, negligible other income, no one-offs.<br><b>Good:</b> cash broadly tracks profit; some other/treasury income (common in cash-rich, debt-free firms).<br><b>Mixed:</b> lumpy cash flow, or a big chunk of profit is other income.<br><b>Weak:</b> profit driven by a one-time gain, or cash flow persistently below profit.<br><b>Poor:</b> profit rising while cash flow falls, receivables ballooning — accounting red flags. <i>(Poor/Weak caps the rating.)</i>",
+ marginTr:"<b>Margin trend — which way are margins heading?</b><br><b>Where:</b> Screener → P&L → the 'OPM %' (operating margin) row, read across 5 yrs.<br><b>Excellent:</b> clearly expanding year over year.<br><b>Good:</b> stable and healthy.<br><b>Mixed:</b> flat with wobble, no clear direction.<br><b>Weak:</b> gently declining.<br><b>Poor:</b> sharply, persistently compressing.",
+ nimTr:"<b>NIM trend — direction of net interest margin.</b><br><b>Where:</b> the bank's quarterly investor presentation (NIM figure), tracked over the last several quarters.<br><b>Excellent:</b> expanding. <b>Good:</b> stable. <b>Mixed:</b> flat/choppy. <b>Weak:</b> slipping. <b>Poor:</b> falling steadily (margin pressure).",
+ fcfConv:"<b>FCF / cash conversion — does profit become free cash?</b><br><b>Where:</b> Screener → Cash Flow tab. Free cash flow ≈ Cash from Operations − Capex. Check it's positive across most years.<br><b>Excellent:</b> strong positive FCF nearly every year.<br><b>Good:</b> mostly positive; occasional capex-heavy year.<br><b>Mixed:</b> swings +/− with investment cycles.<br><b>Weak:</b> rarely generates free cash.<br><b>Poor:</b> chronically negative, funded by debt or dilution.",
+ ocfJ:"<b>Operating cash flow — positive & stable through the cycle?</b><br><b>Where:</b> Screener → Cash Flow → 'Cash from Operating Activity', across 5+ yrs (for a cyclical, look across a full up-and-down cycle).<br><b>Excellent:</b> positive every year, even in downturns.<br><b>Good:</b> positive in most years.<br><b>Mixed:</b> positive in good years, negative in bad.<br><b>Weak:</b> often negative.<br><b>Poor:</b> chronically negative.",
+ normEarn:"<b>Normalized / mid-cycle earnings — are current profits sustainable?</b><br>For cyclicals, today's profit can be a peak or a trough. Ask: where are we in the cycle, and what would earnings look like at mid-cycle?<br><b>Where:</b> compare current margins/ROCE to the 7–10 yr average (Screener history). Look at commodity prices / demand cycle.<br><b>Excellent:</b> earnings at or below mid-cycle (upside ahead).<br><b>Good:</b> around mid-cycle.<br><b>Mixed:</b> hard to tell / mid-to-high.<br><b>Weak:</b> clearly near a cyclical peak.<br><b>Poor:</b> peak earnings the market is treating as permanent.",
+ pbRoe:"<b>P/B vs sustainable ROE — is the P/B justified?</b><br>A bank deserves a higher P/B when it earns a higher, durable ROE. Check whether the multiple matches the returns.<br><b>Excellent:</b> reasonable P/B for a high, stable ROE.<br><b>Good:</b> fair.<br><b>Mixed:</b> full but not extreme.<br><b>Weak:</b> pricey vs the ROE it earns.<br><b>Poor:</b> expensive P/B on mediocre/volatile ROE.",
+ moat:"<b>Business quality / moat — can it defend its profits?</b><br>Qualitative, but the numbers hint at it: a real moat shows as consistently high ROCE and stable/expanding margins over many years (competition can't erode them).<br><b>Where:</b> Screener ROCE & OPM history (5–10 yrs) + your read of brand, switching costs, network effects, cost or regulatory advantage.<br><b>Excellent:</b> wide durable moat, ROCE 20%+ for years, obvious pricing power.<br><b>Good:</b> clear advantage, solid returns.<br><b>Mixed:</b> some edge, real competition.<br><b>Weak:</b> commodity-like, competes on price.<br><b>Poor:</b> no advantage, a price-taker. <i>(Weak/Poor caps the rating.)</i>",
+ governance:"<b>Governance — can you trust management with your money?</b><br><b>Where:</b> Screener → Shareholding tab (promoter holding trend + 'Pledged %'); annual report / news for related-party deals, auditor changes, promoter conduct.<br><b>Excellent:</b> clean — zero/negligible pledging, stable-or-rising promoter stake, no related-party flags, reputable auditor.<br><b>Good:</b> minor issues, nothing structural.<br><b>Mixed:</b> some pledging (&lt;10%) or related-party dealings to watch.<br><b>Weak:</b> meaningful pledging, falling stake, questionable deals.<br><b>Poor:</b> heavy pledging, auditor resignation, minority-unfriendly history, fraud signals. <i>(Poor caps the rating — no Buy regardless of score.)</i>"
+};
+
 function judgeSelect(k,label,help){
  var cur=(draft.judge&&draft.judge[k])||"";
  var opts='<option value="">Not assessed</option>'+JUDGE_OPTS.map(function(o){return '<option value="'+o[0]+'"'+(cur===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");
- return '<div class="jrow"><div class="jlbl">'+label+(help?'<div class="sub">'+help+'</div>':'')+'</div>'
-  +'<select class="jsel" onchange="setJudge(\''+k+'\',this.value)">'+opts+'</select></div>';
+ var guideId="jg_"+k;
+ var hasGuide=!!JUDGE_GUIDE[k];
+ var h='<div class="jrow"><div class="jlbl">'+label
+   +(hasGuide?' <button class="ibtn '+(openInfo[guideId]?"on":"")+'" onclick="toggleInfo(\''+guideId+'\')" aria-label="How to rate">!</button>':'')
+   +(help?'<div class="sub">'+help+'</div>':'')+'</div>'
+   +'<select class="jsel" onchange="setJudge(\''+k+'\',this.value)">'+opts+'</select></div>';
+ if(hasGuide&&openInfo[guideId])h+='<div class="infobox">'+JUDGE_GUIDE[k]+'</div>';
+ return h;
 }
 function numRow(k,label,unit,help){
  var cur=(draft.metrics&&draft.metrics[k]!=null)?draft.metrics[k]:"";
