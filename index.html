@@ -157,6 +157,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .idrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
   .setuprow{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
   .setuprow .hint{font-size:11px;color:var(--dim)}
+  .setuprow2{display:flex;gap:24px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .setupcell{display:flex;align-items:center;gap:10px}
+  @media(max-width:560px){.setuprow2{gap:10px}.setupcell{width:100%}}
   .topgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   @media(max-width:560px){.topgrid{grid-template-columns:1fr}}
   .bandcall{border-radius:12px;padding:14px;text-align:center;height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
@@ -1556,12 +1559,14 @@ function renderEditor(){
    +'<input type="text" id="f_sector" placeholder="Sector" value="'+esc(s.sector)+'" oninput="setF(\'sector\',this.value)" style="flex:2;min-width:90px">'
    +'<input class="num" type="number" step="any" id="f_weight" placeholder="Value" value="'+(s.weight!=null?s.weight:"")+'" oninput="setF(\'weight\',this.value)" style="flex:1;min-width:70px">'
    +'</div>';
- h+='<div class="setuprow"><span class="caplbl">Market cap</span><div class="capchips">'
-  +["Large","Mid","Small"].map(function(c){return '<button class="capchip '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
-  +'</div><span class="hint">current holding value; blank to skip</span></div>';
- h+='<div class="setuprow"><span class="caplbl">Business type</span><div class="capchips">'
-  +[["normal","Normal"],["bank","Bank / NBFC"],["cyclical","Cyclical"]].map(function(t){return '<button class="capchip '+((s.bizType||"normal")===t[0]?"on":"")+'" onclick="setBizType(\''+t[0]+'\')">'+t[1]+'</button>';}).join("")
-  +'</div><span class="hint">sets the weighted model</span></div>';
+ h+='<div class="setuprow2">'
+   +'<div class="setupcell"><span class="caplbl">Market cap</span><div class="capchips">'
+   +["Large","Mid","Small"].map(function(c){return '<button class="capchip '+(s.cap===c?"on":"")+'" onclick="setCap(\''+c+'\')">'+c+'</button>';}).join("")
+   +'</div></div>'
+   +'<div class="setupcell"><span class="caplbl">Business type</span><div class="capchips">'
+   +[["normal","Normal"],["bank","Bank / NBFC"],["cyclical","Cyclical"]].map(function(t){return '<button class="capchip '+((s.bizType||"normal")===t[0]?"on":"")+'" onclick="setBizType(\''+t[0]+'\')">'+t[1]+'</button>';}).join("")
+   +'</div></div>'
+   +'</div>';
  h+='<div class="editsum" id="editorSummary">'+summaryChipsHTML(s)+'</div>';
  // Valuation box + band call side by side at the top
  h+='<div id="comboBoxWrap">'+comboBoxHTML(s)+'</div>';
@@ -1803,6 +1808,22 @@ function bandBreakdownHTML(s){
    (cash conversion ratio, FCF-positive flag, OCF-positive flag, margin-trend pick).
    These SUGGEST — the user confirms — because they drive the override caps. */
 function suggestMarginTr(m){
+ // Prefer deriving from the actual 5Y EBITDA margin figures (slope of the series);
+ // fall back to a manual Stable/Expanding/Contracting pick if no year data.
+ var raw=m["margin__raw"]||{};
+ var ys=["y1","y2","y3","y4","y5"].map(function(k){return raw[k];})
+   .filter(function(v){return v!==""&&v!=null&&!isNaN(+v);}).map(Number);
+ if(ys.length>=3){
+  var half=Math.floor(ys.length/2);
+  var early=ys.slice(0,half),late=ys.slice(ys.length-half);
+  var eAvg=early.reduce(function(a,b){return a+b;},0)/early.length;
+  var lAvg=late.reduce(function(a,b){return a+b;},0)/late.length;
+  var diff=lAvg-eAvg;
+  var d=diff>=0?"+":"";
+  if(diff>=1.5)return{v:"good",basis:"5Y EBITDA margin rising ("+d+diff.toFixed(1)+"pp, early→late avg)"};
+  if(diff<=-1.5)return{v:"weak",basis:"5Y EBITDA margin falling ("+d+diff.toFixed(1)+"pp)"};
+  return{v:"good",basis:"5Y EBITDA margin stable ("+d+diff.toFixed(1)+"pp)"};
+ }
  var mt=m.marginTrend;
  if(mt==="Expanding")return{v:"good",basis:"margin trend = Expanding"};
  if(mt==="Stable")return{v:"good",basis:"margin trend = Stable"};
