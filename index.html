@@ -148,7 +148,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .ovbox{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--rd);margin-top:10px;text-align:left}
   .unvetted{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:11.5px;color:var(--mut);margin-top:8px;text-align:left}
   .fwrow{display:flex;align-items:center;gap:10px;padding:5px 0}
-  .fwname{flex:1;font-size:12.5px}
+  .fwname{flex:1;font-size:12.5px;text-align:left}
   .fwwt{font-size:11px;color:var(--dim);width:34px;text-align:right}
   .fwbar{width:90px;height:7px;background:var(--card2);border-radius:4px;overflow:hidden}
   .fwbarfill{height:100%}
@@ -160,6 +160,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .topgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   @media(max-width:560px){.topgrid{grid-template-columns:1fr}}
   .bandcall{border-radius:12px;padding:14px;text-align:center;height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+  .combobox{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0 0;display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .combobox .valside{flex:1;min-width:0}
+  .combobox .bandside{text-align:right;border-left:1px solid var(--line);padding-left:16px;flex:none}
+  .combobox .valttl{font-size:10px;letter-spacing:.06em;color:var(--mut);font-family:ui-monospace,monospace}
+  .combobox .valbig{font-size:18px;font-weight:800;margin:2px 0}
+  .combobox .bandbig{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:1px 0}
+  .suggestbtn{background:var(--cyan);border:none;color:#fff;border-radius:8px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer;margin:2px 0 10px}
+  .jbasis{font-size:10.5px;color:var(--cyan);margin-top:2px}
+  @media(max-width:560px){.combobox{flex-direction:column;align-items:stretch;text-align:left}.combobox .bandside{text-align:left;border-left:none;border-top:1px solid var(--line);padding-left:0;padding-top:10px}}
   .brandmark svg{border-radius:7px;display:block}
   .caprow{display:flex;align-items:center;gap:10px;margin-top:8px}
   .caplbl{font-size:12px;color:var(--mut);min-width:74px}
@@ -458,10 +467,10 @@ function gradeMetric(val,lo,hi,dir){if(val==null||val===""||isNaN(+val))return n
 var MODELS={
  normal:{label:"Normal Business",metrics:[
   {id:"roce",w:15,grade:"gt",lo:12,hi:22,name:"ROCE / ROIC"},
-  {id:"profitG",w:15,grade:"gt",lo:8,hi:20,name:"Profit Growth"},
+  {id:"profitG",w:15,grade:"gt",lo:4,hi:15,name:"Profit Growth"},
   {id:"roe",w:10,grade:"gt",lo:12,hi:20,name:"ROE"},
   {id:"valNorm",w:15,grade:"valHist",name:"Valuation vs history"},
-  {id:"salesG",w:10,grade:"gt",lo:6,hi:15,name:"Sales Growth"},
+  {id:"salesG",w:10,grade:"gt",lo:3,hi:12,name:"Sales Growth"},
   {id:"margin",w:10,grade:"gt",lo:10,hi:22,name:"Operating Margin"},
   {id:"marginTr",w:5,grade:"judge",name:"Margin Trend"},
   {id:"fcfConv",w:10,grade:"judge",name:"FCF / Cash Conversion"},
@@ -476,19 +485,17 @@ var MODELS={
   {id:"loanG",w:10,grade:"gt",lo:8,hi:18,name:"Loan / AUM Growth"},
   {id:"creditCost",w:5,grade:"lt",lo:0.5,hi:2,name:"Credit Cost"},
   {id:"car",w:5,grade:"gt",lo:12,hi:16,name:"Capital Adequacy"},
-  {id:"pbHist",w:10,grade:"valPB",name:"P/B vs history"},
-  {id:"pbRoe",w:5,grade:"judge",name:"P/B vs sustainable ROE"}]},
+  {id:"pbHist",w:15,grade:"valPB",name:"P/B vs history"}]},
  cyclical:{label:"Cyclical / Turnaround",metrics:[
-  {id:"normEarn",w:20,grade:"judge",name:"Normalized earnings"},
-  {id:"roce",w:15,grade:"gt",lo:10,hi:20,name:"ROCE / ROIC"},
+  {id:"roce",w:20,grade:"gt",lo:10,hi:20,name:"ROCE / ROIC"},
   {id:"margin",w:10,grade:"gt",lo:8,hi:18,name:"Operating Margin"},
   {id:"marginTr",w:10,grade:"judge",name:"Margin Trend"},
   {id:"de",w:10,grade:"lt",lo:0.5,hi:1.5,name:"Debt / Leverage"},
   {id:"icr",w:10,grade:"gt",lo:2,hi:5,name:"Interest Coverage"},
   {id:"ocfJ",w:10,grade:"judge",name:"Operating Cash Flow"},
   {id:"fcfConv",w:5,grade:"judge",name:"Free Cash Flow"},
-  {id:"salesG",w:5,grade:"gt",lo:5,hi:15,name:"Revenue Growth"},
-  {id:"valNorm",w:5,grade:"valHist",name:"Normalized Valuation"}]}
+  {id:"salesG",w:10,grade:"gt",lo:3,hi:12,name:"Revenue Growth"},
+  {id:"valNorm",w:15,grade:"valHist",name:"Normalized Valuation"}]}
 };
 var JUDGE_SCALE={excellent:1,good:0.75,mixed:0.5,weak:0.25,poor:0};
 var JUDGE_OPTS=[["excellent","Excellent"],["good","Good"],["mixed","Mixed"],["weak","Weak"],["poor","Poor"]];
@@ -1557,7 +1564,7 @@ function renderEditor(){
   +'</div><span class="hint">sets the weighted model</span></div>';
  h+='<div class="editsum" id="editorSummary">'+summaryChipsHTML(s)+'</div>';
  // Valuation box + band call side by side at the top
- h+='<div class="topgrid"><div id="valboxWrap">'+valboxHTML(s)+'</div><div id="bandCallWrap">'+bandCallHTML(s)+'</div></div>';
+ h+='<div id="comboBoxWrap">'+comboBoxHTML(s)+'</div>';
  h+=frameworkSectionHTML(s);
 
  CATS.forEach(function(cat){
@@ -1691,8 +1698,6 @@ var JUDGE_GUIDE={
  nimTr:"<b>NIM trend — direction of net interest margin.</b><br><b>Where:</b> the bank's quarterly investor presentation (NIM figure), tracked over the last several quarters.<br><b>Excellent:</b> expanding. <b>Good:</b> stable. <b>Mixed:</b> flat/choppy. <b>Weak:</b> slipping. <b>Poor:</b> falling steadily (margin pressure).",
  fcfConv:"<b>FCF / cash conversion — does profit become free cash?</b><br><b>Where:</b> Screener → Cash Flow tab. Free cash flow ≈ Cash from Operations − Capex. Check it's positive across most years.<br><b>Excellent:</b> strong positive FCF nearly every year.<br><b>Good:</b> mostly positive; occasional capex-heavy year.<br><b>Mixed:</b> swings +/− with investment cycles.<br><b>Weak:</b> rarely generates free cash.<br><b>Poor:</b> chronically negative, funded by debt or dilution.",
  ocfJ:"<b>Operating cash flow — positive & stable through the cycle?</b><br><b>Where:</b> Screener → Cash Flow → 'Cash from Operating Activity', across 5+ yrs (for a cyclical, look across a full up-and-down cycle).<br><b>Excellent:</b> positive every year, even in downturns.<br><b>Good:</b> positive in most years.<br><b>Mixed:</b> positive in good years, negative in bad.<br><b>Weak:</b> often negative.<br><b>Poor:</b> chronically negative.",
- normEarn:"<b>Normalized / mid-cycle earnings — are current profits sustainable?</b><br>For cyclicals, today's profit can be a peak or a trough. Ask: where are we in the cycle, and what would earnings look like at mid-cycle?<br><b>Where:</b> compare current margins/ROCE to the 7–10 yr average (Screener history). Look at commodity prices / demand cycle.<br><b>Excellent:</b> earnings at or below mid-cycle (upside ahead).<br><b>Good:</b> around mid-cycle.<br><b>Mixed:</b> hard to tell / mid-to-high.<br><b>Weak:</b> clearly near a cyclical peak.<br><b>Poor:</b> peak earnings the market is treating as permanent.",
- pbRoe:"<b>P/B vs sustainable ROE — is the P/B justified?</b><br>A bank deserves a higher P/B when it earns a higher, durable ROE. Check whether the multiple matches the returns.<br><b>Excellent:</b> reasonable P/B for a high, stable ROE.<br><b>Good:</b> fair.<br><b>Mixed:</b> full but not extreme.<br><b>Weak:</b> pricey vs the ROE it earns.<br><b>Poor:</b> expensive P/B on mediocre/volatile ROE.",
  moat:"<b>Business quality / moat — can it defend its profits?</b><br>Qualitative, but the numbers hint at it: a real moat shows as consistently high ROCE and stable/expanding margins over many years (competition can't erode them).<br><b>Where:</b> Screener ROCE & OPM history (5–10 yrs) + your read of brand, switching costs, network effects, cost or regulatory advantage.<br><b>Excellent:</b> wide durable moat, ROCE 20%+ for years, obvious pricing power.<br><b>Good:</b> clear advantage, solid returns.<br><b>Mixed:</b> some edge, real competition.<br><b>Weak:</b> commodity-like, competes on price.<br><b>Poor:</b> no advantage, a price-taker. <i>(Weak/Poor caps the rating.)</i>",
  governance:"<b>Governance — can you trust management with your money?</b><br><b>Where:</b> Screener → Shareholding tab (promoter holding trend + 'Pledged %'); annual report / news for related-party deals, auditor changes, promoter conduct.<br><b>Excellent:</b> clean — zero/negligible pledging, stable-or-rising promoter stake, no related-party flags, reputable auditor.<br><b>Good:</b> minor issues, nothing structural.<br><b>Mixed:</b> some pledging (&lt;10%) or related-party dealings to watch.<br><b>Weak:</b> meaningful pledging, falling stake, questionable deals.<br><b>Poor:</b> heavy pledging, auditor resignation, minority-unfriendly history, fraud signals. <i>(Poor caps the rating — no Buy regardless of score.)</i>"
 };
@@ -1702,9 +1707,11 @@ function judgeSelect(k,label,help){
  var opts='<option value="">Not assessed</option>'+JUDGE_OPTS.map(function(o){return '<option value="'+o[0]+'"'+(cur===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");
  var guideId="jg_"+k;
  var hasGuide=!!JUDGE_GUIDE[k];
+ var sug=(window._lastAutoSuggest&&window._lastAutoSuggest[k])?window._lastAutoSuggest[k]:null;
  var h='<div class="jrow"><div class="jlbl">'+label
    +(hasGuide?' <button class="ibtn '+(openInfo[guideId]?"on":"")+'" onclick="toggleInfo(\''+guideId+'\')" aria-label="How to rate">!</button>':'')
-   +(help?'<div class="sub">'+help+'</div>':'')+'</div>'
+   +(help?'<div class="sub">'+help+'</div>':'')
+   +(sug?'<div class="jbasis">✨ suggested: '+esc(sug.basis)+'</div>':'')+'</div>'
    +'<select class="jsel" onchange="setJudge(\''+k+'\',this.value)">'+opts+'</select></div>';
  if(hasGuide&&openInfo[guideId])h+='<div class="infobox">'+JUDGE_GUIDE[k]+'</div>';
  return h;
@@ -1717,6 +1724,46 @@ function numRow(k,label,unit,help){
 /* The band card shown in the editor: weighted /100, the final band (after override
    caps), the reason if capped, an "unvetted" note if judgment fields are blank, and
    the full weighted metric breakdown. */
+/* Combined valuation + band in one box: valuation on the left, band on the right. */
+function comboBoxHTML(s){
+ var r=finalBand(s);
+ var fs=r.fs, band=r.band;
+ var bg=band.c==="em"?"rgba(21,128,61,.08)":band.c==="am"?"rgba(180,83,9,.08)":"rgba(220,38,38,.08)";
+ var v=valFromMetrics(s);
+ var vcol=v==="Undervalued"?"var(--em)":v==="Overvalued"?"var(--rd)":v==="Fairly Valued"?"var(--am)":"var(--dim)";
+ var m=s.metrics||{}, bits=[];
+ if(s.isBank){
+  if(m.pbVsHist!==""&&m.pbVsHist!=null)bits.push((+m.pbVsHist>=0?"+":"")+(+m.pbVsHist).toFixed(0)+"% vs P/B history");
+ }else{
+  if(m.peVsHist!==""&&m.peVsHist!=null)bits.push((+m.peVsHist>=0?"+":"")+(+m.peVsHist).toFixed(0)+"% vs history");
+  if(m.peVsSector!==""&&m.peVsSector!=null)bits.push((+m.peVsSector>=0?"+":"")+(+m.peVsSector).toFixed(0)+"% vs sector");
+ }
+ var h='<div class="combobox" style="background:'+bg+'">';
+ // left: valuation
+ h+='<div class="valside">';
+ if(v){
+  h+='<div class="valttl">VALUATION</div><div class="valbig" style="color:'+vcol+'">'+v+'</div>';
+  if(bits.length)h+='<div class="sub">'+bits.join(" · ")+'</div>';
+ }else{
+  h+='<div class="valttl">VALUATION</div><div class="sub" style="margin-top:4px">Fill P/E vs history below</div>';
+ }
+ h+='</div>';
+ // right: band
+ h+='<div class="bandside">'
+  +'<div class="valttl">BAND · /100</div>'
+  +'<div class="bandbig '+band.c+'">'+band.l+'</div>'
+  +'<div class="sub">Score '+fs.score+'/100'+(fs.unfilled>0?' · '+fs.unfilled+' not filled':'')+(r.capped?' · capped':'')+'</div>'
+  +'</div>';
+ h+='</div>';
+ // caps / unvetted notes below the box (full width)
+ if(r.capped)h+='<div class="ovbox">⚠ '+r.reason+'</div>';
+ var j=s.judge||{};
+ var keyJudge=(s.bizType==="bank")?["earnQual","governance"]:["earnQual","governance","moat"];
+ var missing=keyJudge.filter(function(k){return !j[k];});
+ if(missing.length&&fs.score>=55&&!r.capped)
+  h+='<div class="unvetted">Unvetted — '+missing.map(function(k){return k==="earnQual"?"earnings quality":k==="governance"?"governance":"moat";}).join(", ")+' not assessed.</div>';
+ return h;
+}
 function bandCallHTML(s){
  var r=finalBand(s);
  var fs=r.fs, band=r.band;
@@ -1752,6 +1799,65 @@ function bandBreakdownHTML(s){
  h+='</div>';
  return h;
 }
+/* Auto-suggest the 3 derivable judgment fields from values already entered
+   (cash conversion ratio, FCF-positive flag, OCF-positive flag, margin-trend pick).
+   These SUGGEST — the user confirms — because they drive the override caps. */
+function suggestMarginTr(m){
+ var mt=m.marginTrend;
+ if(mt==="Expanding")return{v:"good",basis:"margin trend = Expanding"};
+ if(mt==="Stable")return{v:"good",basis:"margin trend = Stable"};
+ if(mt==="Contracting")return{v:"weak",basis:"margin trend = Contracting"};
+ return null;
+}
+function suggestFcfConv(m){
+ var cc=(m.cashconv!=null&&m.cashconv!==""&&!isNaN(+m.cashconv))?+m.cashconv:null;
+ var fcfPos=m.fcf;
+ if(cc==null&&!fcfPos)return null;
+ if(cc!=null){
+  if(cc>=0.9&&fcfPos==="yes")return{v:"excellent",basis:"OCF/PAT "+cc+" (strong) + FCF positive"};
+  if(cc>=0.8&&fcfPos!=="no")return{v:"good",basis:"OCF/PAT "+cc+" (healthy)"+(fcfPos==="yes"?" + FCF positive":"")};
+  if(cc>=0.6)return{v:"mixed",basis:"OCF/PAT "+cc+" (moderate)"+(fcfPos==="no"?", FCF negative":"")};
+  return{v:"weak",basis:"OCF/PAT "+cc+" (weak — cash lags profit)"};
+ }
+ if(fcfPos==="yes")return{v:"good",basis:"FCF positive (no OCF/PAT ratio entered)"};
+ if(fcfPos==="no")return{v:"weak",basis:"FCF negative"};
+ return null;
+}
+function suggestEarnQual(m){
+ var cc=(m.cashconv!=null&&m.cashconv!==""&&!isNaN(+m.cashconv))?+m.cashconv:null;
+ var ocfPos=m.ocf;
+ if(cc==null&&!ocfPos)return null;
+ var note=" — proxy from cash conversion; check other income / one-offs before trusting";
+ if(cc!=null){
+  if(cc>=0.8)return{v:"good",basis:"OCF/PAT "+cc+", profit is cash-backed"+note};
+  if(cc>=0.6)return{v:"mixed",basis:"OCF/PAT "+cc+", cash lags profit somewhat"+note};
+  return{v:"weak",basis:"OCF/PAT "+cc+", profit not converting to cash"+note};
+ }
+ if(ocfPos==="yes")return{v:"good",basis:"OCF positive"+note};
+ if(ocfPos==="no")return{v:"weak",basis:"OCF negative — profit not backed by cash"};
+ return null;
+}
+function autoSuggestJudge(){
+ var m=draft.metrics||{};
+ var t=draft.bizType||"normal";
+ var picks={earnQual:suggestEarnQual(m)};
+ if(t==="bank"){
+  // For banks the trend field is NIM trend; derive it from the margin-trend pick if present.
+  picks.nimTr=suggestMarginTr(m);
+  if(picks.nimTr)picks.nimTr.basis=picks.nimTr.basis.replace("margin trend","NIM/margin trend");
+ } else {
+  picks.marginTr=suggestMarginTr(m);
+  picks.fcfConv=suggestFcfConv(m);
+ }
+ var applied=[];
+ if(!draft.judge)draft.judge={};
+ Object.keys(picks).forEach(function(k){
+  if(picks[k]){draft.judge[k]=picks[k].v;applied.push(k);}
+ });
+ if(!applied.length){alert("No data to derive from yet. Enter the cash-conversion ratio, FCF/OCF flags, or margin trend in the metrics below first, then try again.");return;}
+ window._lastAutoSuggest=picks;
+ renderEditor();
+}
 function frameworkSectionHTML(s){
  var t=s.bizType||"normal";
  var h='<div class="fwsec"><div class="fwtitle">Framework metrics <span class="sub">— weighted '+(MODELS[t].label)+' model</span></div>';
@@ -1767,15 +1873,17 @@ function frameworkSectionHTML(s){
   h+='<div class="cat">Cyclical inputs</div>';
   h+='<div class="sub" style="margin:0 2px 8px">Normalized earnings and cash-flow are judgment calls — assess them below.</div>';
  }
- // Judgment inputs (optional) — apply to all types, with type-specific ones added
+ // Judgment inputs (optional). "Auto-suggest" fills the derivable ones from entered data.
  h+='<div class="cat">Judgment <span class="sub" style="font-weight:400">— optional; blank = not assessed, no cap</span></div>';
- if(t==="cyclical")h+=judgeSelect("normEarn","Normalized / mid-cycle earnings","Where are we in the cycle? Are current earnings sustainable or peak/trough?");
+ h+='<button class="suggestbtn" onclick="autoSuggestJudge()">✨ Auto-suggest from my data</button>';
  h+=judgeSelect("earnQual","Earnings quality","Cash-backed & recurring? Or one-time gains / aggressive accounting?");
- h+=judgeSelect("marginTr",(t==="bank"?"NIM trend":"Margin trend"),"Expanding, stable, or compressing?");
- if(t!=="bank")h+=judgeSelect("fcfConv","FCF / cash conversion","Does cash flow back the reported profit?");
+ if(t==="bank"){
+  h+=judgeSelect("nimTr","NIM trend","Direction of net interest margin.");
+ } else {
+  h+=judgeSelect("marginTr","Margin trend","Expanding, stable, or compressing?");
+  h+=judgeSelect("fcfConv",(t==="cyclical"?"Free cash flow":"FCF / cash conversion"),"Does cash flow back the reported profit?");
+ }
  if(t==="cyclical")h+=judgeSelect("ocfJ","Operating cash flow","Positive & stable through the cycle?");
- if(t==="bank")h+=judgeSelect("nimTr","NIM trend","Direction of net interest margin.");
- if(t==="bank")h+=judgeSelect("pbRoe","P/B vs sustainable ROE","Is the P/B justified by the ROE it earns?");
  h+=judgeSelect("moat","Business quality / moat","Durable competitive advantage? Pricing power?");
  h+=judgeSelect("governance","Governance","Promoter integrity, related-party deals, pledging, auditor changes.");
  h+='</div>';
@@ -1870,7 +1978,7 @@ function refreshLive(){
  var vw=document.getElementById("valboxWrap");if(vw)vw.innerHTML=valboxHTML(draft);
  var es=document.getElementById("editorSummary");if(es)es.innerHTML=summaryChipsHTML(draft);
  var bc=document.getElementById("bandCardWrap");if(bc)bc.innerHTML=bandBreakdownHTML(draft);
- var bcall=document.getElementById("bandCallWrap");if(bcall)bcall.innerHTML=bandCallHTML(draft);
+ var cbw=document.getElementById("comboBoxWrap");if(cbw)cbw.innerHTML=comboBoxHTML(draft);
 }
 function saveDraft(){
  if(!draft.name&&!draft.ticker){alert("Add a name or ticker first.");return;}
