@@ -158,6 +158,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   .setuprow{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
   .setuprow .hint{font-size:11px;color:var(--dim)}
   .setuprow2{display:flex;gap:24px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .dashfilter{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 4px;flex-wrap:wrap}
   .setupcell{display:flex;align-items:center;gap:10px}
   @media(max-width:560px){.setuprow2{gap:10px}.setupcell{width:100%}}
   .topgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
@@ -469,35 +470,37 @@ function summaryChipsHTML(s){
 function gradeMetric(val,lo,hi,dir){if(val==null||val===""||isNaN(+val))return null;var n=+val;if(dir==="gt"){if(n>=hi)return 1;if(n<=lo)return 0;return(n-lo)/(hi-lo);}else{if(n<=lo)return 1;if(n>=hi)return 0;return(hi-n)/(hi-lo);}}
 var MODELS={
  normal:{label:"Normal Business",metrics:[
-  {id:"roce",w:15,grade:"gt",lo:12,hi:22,name:"ROCE / ROIC"},
-  {id:"profitG",w:15,grade:"gt",lo:4,hi:15,name:"Profit Growth"},
-  {id:"roe",w:10,grade:"gt",lo:12,hi:20,name:"ROE"},
+  {id:"roce",w:15,grade:"gt",lo:10,hi:20,name:"ROCE / ROIC"},
+  {id:"profitG",w:15,grade:"gt",lo:3,hi:14,name:"Profit Growth",damp:true},
+  {id:"roe",w:10,grade:"gt",lo:10,hi:20,name:"ROE"},
   {id:"valNorm",w:15,grade:"valHist",name:"Valuation vs history"},
-  {id:"salesG",w:10,grade:"gt",lo:3,hi:12,name:"Sales Growth"},
-  {id:"margin",w:10,grade:"gt",lo:10,hi:22,name:"Operating Margin"},
+  {id:"salesG",w:10,grade:"gt",lo:3,hi:12,name:"Sales Growth",damp:true},
+  {id:"margin",w:10,grade:"gt",lo:8,hi:22,name:"Operating Margin"},
   {id:"marginTr",w:5,grade:"judge",name:"Margin Trend"},
   {id:"fcfConv",w:10,grade:"judge",name:"FCF / Cash Conversion"},
   {id:"debtICR",w:5,grade:"debtICR",name:"Debt / Interest Coverage"},
   {id:"earnQual",w:5,grade:"judge",name:"Earnings Quality"}]},
+ // Bank model reads ROA from the roce field, NIM from margin, CAR from de —
+ // those are the SAME inputs the generic metric section already collects (relabeled
+ // for banks), so nothing is entered twice.
  bank:{label:"Bank / NBFC",metrics:[
-  {id:"roe",w:15,grade:"gt",lo:12,hi:18,name:"ROE"},
-  {id:"roa",w:15,grade:"gt",lo:0.8,hi:1.6,name:"ROA"},
-  {id:"nim",w:15,grade:"gt",lo:2.5,hi:4.5,name:"NIM"},
+  {id:"roe",w:15,grade:"gt",lo:8,hi:15,name:"ROE"},
+  {id:"roce",w:15,grade:"gt",lo:0.6,hi:1.5,name:"ROA"},
+  {id:"margin",w:15,grade:"gt",lo:2.2,hi:3.8,name:"NIM"},
   {id:"assetQual",w:10,grade:"gt_gnpa",name:"Asset Quality (GNPA)"},
   {id:"nimTr",w:10,grade:"judge",name:"NIM Trend"},
-  {id:"loanG",w:10,grade:"gt",lo:8,hi:18,name:"Loan / AUM Growth"},
-  {id:"creditCost",w:5,grade:"lt",lo:0.5,hi:2,name:"Credit Cost"},
-  {id:"car",w:5,grade:"gt",lo:12,hi:16,name:"Capital Adequacy"},
+  {id:"loanG",w:15,grade:"gt",lo:6,hi:18,name:"Loan / AUM Growth",damp:true},
+  {id:"de",w:5,grade:"gt",lo:11,hi:16,name:"Capital Adequacy"},
   {id:"pbHist",w:15,grade:"valPB",name:"P/B vs history"}]},
  cyclical:{label:"Cyclical / Turnaround",metrics:[
-  {id:"roce",w:20,grade:"gt",lo:10,hi:20,name:"ROCE / ROIC"},
-  {id:"margin",w:10,grade:"gt",lo:8,hi:18,name:"Operating Margin"},
+  {id:"roce",w:20,grade:"gt",lo:6,hi:18,name:"ROCE / ROIC"},
+  {id:"margin",w:10,grade:"gt",lo:6,hi:16,name:"Operating Margin"},
   {id:"marginTr",w:10,grade:"judge",name:"Margin Trend"},
   {id:"de",w:10,grade:"lt",lo:0.5,hi:1.5,name:"Debt / Leverage"},
   {id:"icr",w:10,grade:"gt",lo:2,hi:5,name:"Interest Coverage"},
   {id:"ocfJ",w:10,grade:"judge",name:"Operating Cash Flow"},
   {id:"fcfConv",w:5,grade:"judge",name:"Free Cash Flow"},
-  {id:"salesG",w:10,grade:"gt",lo:3,hi:12,name:"Revenue Growth"},
+  {id:"salesG",w:10,grade:"gt",lo:3,hi:12,name:"Revenue Growth",damp:true},
   {id:"valNorm",w:15,grade:"valHist",name:"Normalized Valuation"}]}
 };
 var JUDGE_SCALE={excellent:1,good:0.75,mixed:0.5,weak:0.25,poor:0};
@@ -505,7 +508,17 @@ var JUDGE_OPTS=[["excellent","Excellent"],["good","Good"],["mixed","Mixed"],["we
 function gradeValHist(m){var hist=(m.peVsHist!=null&&m.peVsHist!==""&&!isNaN(+m.peVsHist))?+m.peVsHist:null;var sec=(m.peVsSector!=null&&m.peVsSector!==""&&!isNaN(+m.peVsSector))?+m.peVsSector:null;if(hist==null&&sec==null)return null;var basis;if(hist==null)basis=sec;else if(sec==null)basis=hist;else{var d=(hist<0)!==(sec<0);basis=d?hist:hist*0.7+sec*0.3;}if(basis<=-25)return 1;if(basis>=25)return 0;return(25-basis)/50;}
 function gradeValPB(m){var pb=(m.pbVsHist!=null&&m.pbVsHist!==""&&!isNaN(+m.pbVsHist))?+m.pbVsHist:null;if(pb==null)return null;if(pb<=-25)return 1;if(pb>=25)return 0;return(25-pb)/50;}
 function scoreOne(md,m,judge){switch(md.grade){
- case "gt":case "lt":return gradeMetric(m[md.id],md.lo,md.hi,md.grade);
+ case "gt":case "lt":{
+  var frac=gradeMetric(m[md.id],md.lo,md.hi,md.grade);
+  // Dampen abnormally high growth (>50%) — likely a one-off or low-base effect,
+  // not a durable rate. Full marks are earned by strong-but-believable growth,
+  // and a spike is treated with suspicion rather than rewarded at face value.
+  if(frac!=null&&md.damp){
+   var v=+m[md.id];
+   if(!isNaN(v)&&v>50)frac=Math.min(frac,0.6); // cap credit for suspicious spikes
+  }
+  return frac;
+ }
  case "gt_gnpa":return gradeMetric(m[md.id],1.5,5,"lt");
  case "valHist":return gradeValHist(m);
  case "valPB":return gradeValPB(m);
@@ -842,7 +855,7 @@ var HKEY="stockScorecard:holdings";
 var holdings=loadHoldings();
 function loadHoldings(){try{return JSON.parse(localStorage.getItem(HKEY))||[];}catch(e){return[];}}
 function persistHoldings(){try{localStorage.setItem(HKEY,JSON.stringify(holdings));}catch(e){}}
-var view="dash",compareSel=[],syncPrompt=null,openInfo={},cmpSector="",cmpCap="";
+var view="dash",compareSel=[],syncPrompt=null,openInfo={},cmpSector="",cmpCap="",dashFilter="all";
 var driveState=Object.assign({token:null},loadDriveMeta());
 function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return SEED();}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(stocks));localStorage.setItem(KEY+":ts",String(Date.now()));}catch(e){}}
@@ -889,14 +902,32 @@ function renderDash(){
  h+='<div class="sub" id="driveStatus" style="text-align:right;margin:-2px 2px 4px 0;font-size:11px">'+driveStatusText()+'</div>';
  h+=tabbarHTML();
 
+ // Invested vs watchlist: a stock is "invested" if it has a value > 0 (from portfolio or manual)
+ function stockValue(s){var w=(s.weight!=null&&s.weight!=="")?+s.weight:0;return isNaN(w)?0:w;}
+ var invCount=stocks.filter(function(s){return stockValue(s)>0;}).length;
+ var watchCount=stocks.length-invCount;
+ h+='<div class="dashfilter">'
+   +'<div class="capchips">'
+   +[["all","All ("+stocks.length+")"],["invested","Invested ("+invCount+")"],["watchlist","Watchlist ("+watchCount+")"]]
+     .map(function(f){return '<button class="capchip '+(dashFilter===f[0]?"on":"")+'" onclick="setDashFilter(\''+f[0]+'\')">'+f[1]+'</button>';}).join("")
+   +'</div>'
+   +(holdings&&holdings.length?'<button class="btn-o" style="padding:6px 11px;font-size:12px" onclick="linkAllValues()" title="Set each stock\'s Value from your portfolio holdings">↺ Link values from portfolio</button>':'')
+   +'</div>';
+
  var sa=sectorAlloc();
  // ---- LEFT COLUMN: holdings table ----
  var left='';
- if(!stocks.length){
-  left+='<div class="empty">No stocks. Tap +Add to start.</div>';
+ var scF=sc.filter(function(o){
+  var v=stockValue(o.s);
+  if(dashFilter==="invested")return v>0;
+  if(dashFilter==="watchlist")return v<=0;
+  return true;
+ });
+ if(!scF.length){
+  left+='<div class="empty">'+(dashFilter==="invested"?"No invested stocks yet. Link values from your portfolio, or add a Value to a stock.":dashFilter==="watchlist"?"No watchlist stocks — every stock has a value.":"No stocks. Tap +Add to start.")+'</div>';
  }else{
   left+='<div class="theadrow"><span style="flex:1">Stock</span><span class="tcol-score">Score</span><span class="tcol-tag">Band</span><span class="tcol-rev">Reviewed</span></div>';
-  sc.forEach(function(o){left+=trowHTML(o.s,o.x);});
+  scF.forEach(function(o){left+=trowHTML(o.s,o.x);});
  }
  left+='<div class="foot">Starting values are estimates from our analysis — verify each on Screener/Tickertape on first review, then update after each quarter\'s results. DII/FII 6-mo change and valuation are left for you to fill. Not investment advice. Tap any row for the full breakdown.</div>';
 
@@ -1205,6 +1236,34 @@ function holdPrice(h){
  return null;
 }
 function curVal(h){var p=holdPrice(h);return p==null?null:p*h.qty;}
+/* Link each stock's Value (weight) from portfolio holdings — current market value
+   (qty × price). Matches stock.ticker to holding.symbol. Lets you avoid typing values
+   by hand; the portfolio is the single source of truth for what you actually hold. */
+function valueFromHoldings(s){
+ if(!s.ticker)return null;
+ var tk=String(s.ticker).toUpperCase().trim();
+ var hh=holdings.filter(function(x){
+  if(x.exited)return false;
+  var sym=String(x.symbol||"").toUpperCase().trim();
+  return sym===tk||sym.replace(/\.(NS|BO)$/,"")===tk||sym===tk+".NS"||sym===tk+".BO";
+ });
+ if(!hh.length)return null;
+ var tot=0,any=false;
+ hh.forEach(function(x){var cv=curVal(x);if(cv!=null){tot+=cv;any=true;}});
+ return any?Math.round(tot):null;
+}
+function setDashFilter(f){dashFilter=f;render();}
+function linkAllValues(){
+ var linked=0;
+ stocks.forEach(function(s){
+  var v=valueFromHoldings(s);
+  if(v!=null){s.weight=v;linked++;}
+ });
+ persist();
+ if(driveState.token)pushToDrive();
+ render();
+ if(linked===0)alert("No matching holdings found. Make sure each stock's Ticker matches the symbol in your imported portfolio (e.g. TCS, INFY).");
+}
 function pnl(h){var cv=curVal(h);return cv==null?null:cv-h.invested;}
 
 /* Portfolio value history — one snapshot per day, stored locally and synced to Drive.
@@ -1883,13 +1942,9 @@ function frameworkSectionHTML(s){
  var t=s.bizType||"normal";
  var h='<div class="fwsec"><div class="fwtitle">Framework metrics <span class="sub">— weighted '+(MODELS[t].label)+' model</span></div>';
  if(t==="bank"){
-  h+='<div class="cat">Bank fundamentals</div>';
-  h+=numRow("roa","Return on Assets (ROA)","%","Net profit ÷ total assets. >1.5% strong.");
-  h+=numRow("nim","Net Interest Margin (NIM)","%","From the bank\'s investor presentation. >3.5% strong.");
+  h+='<div class="cat">Bank fundamentals <span class="sub" style="font-weight:400">— ROA, NIM &amp; CAR come from the ROCE/margin/D-E rows above (relabeled for banks)</span></div>';
   h+=numRow("assetQual","Gross NPA (GNPA)","%","Lower is better. <1.5% clean, >5% weak.");
-  h+=numRow("loanG","Loan / AUM growth","%","Advances growth YoY.");
-  h+=numRow("creditCost","Credit cost","%","Provisions ÷ advances. <0.5% good, >2% weak.");
-  h+=numRow("car","Capital adequacy (CAR)","%","Cushion for losses. >13% comfortable.");
+  h+=numRow("loanG","Loan / AUM growth","%","Advances growth YoY, from Screener Balance Sheet.");
  } else if(t==="cyclical"){
   h+='<div class="cat">Cyclical inputs</div>';
   h+='<div class="sub" style="margin:0 2px 8px">Normalized earnings and cash-flow are judgment calls — assess them below.</div>';
